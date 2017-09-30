@@ -1,6 +1,8 @@
 package com.redhat.developers.project;
 
+import com.redhat.developers.service.RepoService;
 import com.redhat.developers.service.TemplateService;
+import com.redhat.developers.vo.RepoVO;
 import freemarker.template.TemplateException;
 import io.spring.initializr.generator.BasicProjectRequest;
 import io.spring.initializr.generator.ProjectGenerator;
@@ -11,7 +13,6 @@ import io.spring.initializr.util.TemplateRenderer;
 import io.spring.initializr.web.project.MainController;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.tools.ant.Project;
-import org.apache.tools.ant.taskdefs.Echo;
 import org.apache.tools.ant.taskdefs.Zip;
 import org.apache.tools.ant.types.ZipFileSet;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,8 +21,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.StreamUtils;
 import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.resource.ResourceUrlProvider;
 
 import java.io.File;
@@ -33,6 +32,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @Controller
 @Slf4j
@@ -41,30 +41,24 @@ public class CheProjectController extends MainController {
 
     private static final String DEFAULT_SPRING_BOOT_CHE_IMAGE = "rhche/spring-boot";
 
-    @Value("${git.userid}")
-    private String githubUserId;
-
     private final ProjectGenerator projectGenerator;
 
     private final TemplateService templateService;
 
+    private final RepoService repoService;
+
     public CheProjectController(InitializrMetadataProvider metadataProvider, TemplateRenderer templateRenderer,
                                 ResourceUrlProvider resourceUrlProvider, ProjectGenerator projectGenerator,
-                                DependencyMetadataProvider dependencyMetadataProvider, TemplateService templateService) {
+                                DependencyMetadataProvider dependencyMetadataProvider, TemplateService templateService,
+                                RepoService repoService) {
         super(metadataProvider, templateRenderer, resourceUrlProvider, projectGenerator, dependencyMetadataProvider);
         this.projectGenerator = projectGenerator;
         this.templateService = templateService;
+        this.repoService = repoService;
     }
 
-    @RequestMapping(value = "/", produces = "text/html")
-    public String home(Map<String, Object> model) {
-        super.home(model);
-        return "newhome";
-    }
 
-    @RequestMapping("/chestarter.zip")
-    @ResponseBody
-    public ResponseEntity<byte[]> cheSpringZip(BasicProjectRequest request) {
+    public ResponseEntity<byte[]> springZip(BasicProjectRequest request) {
         try {
 
             log.info("Creating Project with Che-Starter");
@@ -74,77 +68,86 @@ public class CheProjectController extends MainController {
             String projectDescription = request.getDescription();
             String projectArtifactId = request.getArtifactId();
 
-            projectContext.put("artifactId", projectArtifactId);
-            projectContext.put("description", projectDescription);
-            //FIXME
-            projectContext.put("githubRepoUrl", String.format("https://github.com/%s/%s", githubUserId, projectArtifactId));
-            projectContext.put("dockerImage", DEFAULT_SPRING_BOOT_CHE_IMAGE);
+            Optional<RepoVO> optRepoVo = repoService.createRepo(projectArtifactId, projectDescription);
+
+            if (optRepoVo.isPresent()) {
+
+                projectContext.put("artifactId", projectArtifactId);
+                projectContext.put("description", projectDescription);
+                projectContext.put("githubRepoUrl", optRepoVo.get().getHttpUrl());
+                projectContext.put("dockerImage", DEFAULT_SPRING_BOOT_CHE_IMAGE);
 
 
-            //Step-2 Generate Project as zip with Che .factory.json.ftl
-            String factoryJson = templateService.buildFactoryJsonFromTemplate(projectContext);
+                //Step-2 Generate Project as zip with Che .factory.json
+                String factoryJson = templateService.buildFactoryJsonFromTemplate(projectContext);
 
-            log.trace("factoryJson:{}", factoryJson);
+                log.trace("factoryJson:{}", factoryJson);
 
-            ProjectRequest projectRequest = (ProjectRequest) request;
+                ProjectRequest projectRequest = (ProjectRequest) request;
 
-            File projectDir = projectGenerator.generateProjectStructure(projectRequest);
+                File projectDir = projectGenerator.generateProjectStructure(projectRequest);
 
-            File projectDistribution = projectGenerator.createDistributionFile(projectDir, ".zip");
+                File projectDistribution = projectGenerator.createDistributionFile(projectDir, ".zip");
 
-            String wrapperScript = request.getBaseDir() != null
+                String wrapperScript = request.getBaseDir() != null
                     ? request.getBaseDir() + "/mvnw" : "mvnw";
-            new File(projectDir, wrapperScript).setExecutable(true);
+                new File(projectDir, wrapperScript).setExecutable(true);
 
 
-            String factoryJsonFile = request.getBaseDir() != null
+                String factoryJsonFile = request.getBaseDir() != null
                     ? request.getBaseDir() + "/.factory.json" : ".factory.json";
 
-            //Write Che Factory Json File
-            Files.write(Paths.get(projectDir.getAbsolutePath(), factoryJsonFile), factoryJson.getBytes());
+                //Write Che Factory Json File
+                Files.write(Paths.get(projectDir.getAbsolutePath(), factoryJsonFile), factoryJson.getBytes());
 
-            Zip projectZip = new Zip();
-            projectZip.setProject(new Project());
+                Zip projectZip = new Zip();
+                projectZip.setProject(new Project());
 
-            ZipFileSet zipFileSet = new ZipFileSet();
-            zipFileSet.setDir(projectDir);
-            zipFileSet.setFileMode("755");
-            zipFileSet.setIncludes("**,");
-            zipFileSet.setExcludes(wrapperScript);
-            zipFileSet.setDefaultexcludes(false);
-            projectZip.addFileset(zipFileSet);
-            projectZip.setDestFile(projectDistribution.getCanonicalFile());
-            projectZip.execute();
+                ZipFileSet zipFileSet = new ZipFileSet();
+                zipFileSet.setDir(projectDir);
+                zipFileSet.setFileMode("755");
+                zipFileSet.setIncludes("**,");
+                zipFileSet.setExcludes(wrapperScript);
+                zipFileSet.setDefaultexcludes(false);
+                projectZip.addFileset(zipFileSet);
+                projectZip.setDestFile(projectDistribution.getCanonicalFile());
+                projectZip.execute();
 
-            //FIXME: Step-2 Create Project on Github and Push the contents
+                //FIXME: Step-2  Push the contents to GitHub
 
 
-            //Build Response
+                //Build Response
 
-            String downloadFileName = sanitizedUrlEncodedName(projectArtifactId, "zip");
-            String contentDispositionHeaderValue = "attachment; filename=\"" + downloadFileName + "\"";
+                String downloadFileName = sanitizedUrlEncodedName(projectArtifactId, "zip");
+                String contentDispositionHeaderValue = "attachment; filename=\"" + downloadFileName + "\"";
 
-            byte[] bytes = StreamUtils.copyToByteArray(new FileInputStream(projectDistribution));
+                byte[] bytes = StreamUtils.copyToByteArray(new FileInputStream(projectDistribution));
 
-            projectGenerator.cleanTempFiles(projectDir);
+                projectGenerator.cleanTempFiles(projectDir);
 
-            return ResponseEntity.ok()
+                return ResponseEntity.ok()
                     .header("Content-Type", "application/zip")
                     .header("Content-Disposition", contentDispositionHeaderValue)
                     .body(bytes);
 
+            } else {
+                log.info("Repo not present, hence skipping creation");
+                return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            }
+
         } catch (IOException e) {
             log.error("Error:", e);
             return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+                .status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         } catch (TemplateException e) {
             log.error("Error:", e);
             return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+                .status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         } catch (Exception e) {
             log.error("Error:", e);
             return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+                .status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 

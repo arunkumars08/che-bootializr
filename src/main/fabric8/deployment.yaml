@@ -1,0 +1,16 @@
+spec:
+  template:
+    spec:
+      containers:
+        - volumeMounts:
+          - name: github-config
+            mountPath: "/home/jboss"
+      volumes:
+      - name: github-config
+        secret:
+          secretName: github-config
+          items:
+          - key: github.user 
+            path: user 
+          - key: github.oauth
+            path: token 

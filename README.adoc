@@ -1,0 +1,12 @@
+# chebootializer
+
+
+
+# Creating Github Secret
+
+kubectl create secret generic github-config \
+  --from-file ./github.user \ <1>
+  --from-file ./github.token <2>
+
+<1> Adds file `github.user` to secret
+<2> Adds file `github.token` to secret

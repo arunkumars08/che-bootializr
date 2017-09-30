@@ -1,34 +1,10 @@
-initializr:
-  java-versions:
-    - id: 9
-      default: false
-    - id: 8
-      default: true
-  languages:
-    - name: Java
-      id: java
-      default: true
-  packagings:
-    - name: Jar
-      id: jar
-      default: true
-    - name: War
-      id: war
-      default: false
-  types:
-    - name: Maven Project
-      id: maven-project
-      description: Generates a Maven based project archive
-      tags:
-       build: maven
-       format: project
-      default: true
-      action: /chestarter.zip
+spring:
+  application:
+    name: chebootializr
 
-git:
-  userid: skshiftio
-  oauth-clientid: ${CHE_OAUTH_GITHUB_CLIENTID}
-  oauth-secret: ${CHE_OAUTH_GITHUB_CLIENTSECRET}
-che:
-  url: http://che-eclipse-che.192.168.64.8.nip.io
+chebootializr:
+  git:
+    file: "${user.home}/.github"
+  che:
+    service-name: che
 
