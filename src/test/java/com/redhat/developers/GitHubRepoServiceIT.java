@@ -1,12 +1,12 @@
 /**
  * Copyright (c) 2017 Red Hat, Inc.
- *
+ * <p>
  * Red Hat licenses this file to you under the Apache License, version
  * 2.0 (the "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
@@ -16,17 +16,21 @@
 package com.redhat.developers;
 
 import com.redhat.developers.config.CheBootializrConfiguration;
-import com.redhat.developers.service.GitHubRepoServiceImpl;
-import com.redhat.developers.service.RepoService;
+import com.redhat.developers.service.GitHubRepoService;
 import com.redhat.developers.vo.RepoVO;
 import org.junit.FixMethodOrder;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -39,46 +43,74 @@ import static org.awaitility.Awaitility.await;
 public class GitHubRepoServiceIT {
 
     @Autowired
-    RepoService repoService;
+    GitHubRepoService gitHubRepoService;
+
+    @Rule
+    public TemporaryFolder gitRepoFolder = new TemporaryFolder();
 
     @Test
     public void should_create_a_repo_called_demo() throws Exception {
-        assertThat(repoService).isNotNull();
-        repoService.createRepo("demo", "my demo repo");
+        assertThat(gitHubRepoService).isNotNull();
+        gitHubRepoService.createRepo("demo", "my demo repo");
     }
 
     @Test
     public void should_delete_a_repo_called_demo() throws Exception {
-        assertThat(repoService).isNotNull();
-        boolean isDeleted = repoService.deleteRepo("demo");
+        assertThat(gitHubRepoService).isNotNull();
+        boolean isDeleted = gitHubRepoService.deleteRepo("demo");
         assertThat(isDeleted).isTrue();
     }
 
     @Test
     public void will_not_delete_repo() throws Exception {
-        assertThat(repoService).isNotNull();
-        boolean isDeleted = repoService.deleteRepo("demo2");
+        assertThat(gitHubRepoService).isNotNull();
+        boolean isDeleted = gitHubRepoService.deleteRepo("demo2");
         assertThat(isDeleted).isFalse();
     }
 
     @Test
     public void should_get_repo_getdemo() throws Exception {
-        assertThat(repoService).isNotNull();
-        Optional<RepoVO> createdRepo = repoService.createRepo("getdemo", "my get demo repo");
+        assertThat(gitHubRepoService).isNotNull();
+        Optional<RepoVO> createdRepo = gitHubRepoService.createRepo("getdemo", "my get demo repo");
         assertThat(createdRepo.isPresent()).isTrue();
 
         await().atMost(10, TimeUnit.SECONDS)
             .until(() -> {
                 //Awaitality
-                Optional<RepoVO> getRepo = repoService.getRepo("getdemo");
+                Optional<RepoVO> getRepo = gitHubRepoService.getRepo("getdemo");
                 assertThat(getRepo.isPresent()).isTrue();
 
                 assertThat(createdRepo.get().getName()).isEqualTo(getRepo.get().getName());
                 assertThat(createdRepo.get().getFqdn()).isEqualTo(getRepo.get().getFqdn());
 
                 //Cleanup
-                return repoService.deleteRepo("getdemo");
+                return gitHubRepoService.deleteRepo("getdemo");
             });
+    }
+
+    @Test
+    public void should_add_content_to_repo_demoadd() throws Exception {
+
+        //delete any testing repo
+        gitHubRepoService.deleteRepo("demoadd");
+
+        //Add dummy file
+        File myFile = gitRepoFolder.newFile("README.md");
+        myFile.createNewFile();
+        myFile.setWritable(true);
+        Files.write(Paths.get(myFile.toURI()), "Hello World!!!".getBytes());
+
+        assertThat(myFile).isFile();
+        assertThat(myFile).exists();
+
+        String fileContent = new String(Files.readAllBytes(Paths.get(myFile.toURI())));
+
+        assertThat(fileContent).isEqualToIgnoringWhitespace("Hello World!!!");
+
+        gitHubRepoService.pushContentToOrigin("demoadd", gitRepoFolder.getRoot());
+
+        //Clean up
+        gitHubRepoService.deleteRepo("demoadd");
     }
 
 }

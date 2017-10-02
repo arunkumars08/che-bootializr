@@ -3,6 +3,7 @@ package com.redhat.developers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
 import com.redhat.developers.service.TemplateService;
+import com.samskivert.mustache.Mustache;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,5 +56,4 @@ public class FactoryJsonTest {
 
         assertThat(workspaceName).isEqualToIgnoringWhitespace("demo-project");
     }
-
 }

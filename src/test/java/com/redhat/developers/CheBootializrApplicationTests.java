@@ -17,10 +17,13 @@ package com.redhat.developers;
 
 import com.redhat.developers.config.CheBootalizrProperties;
 import com.redhat.developers.config.CheBootializrConfiguration;
+import io.spring.initializr.metadata.InitializrMetadataProvider;
+import io.spring.initializr.metadata.InitializrProperties;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
@@ -31,19 +34,38 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
+@EnableAutoConfiguration
 @ActiveProfiles("ut")
 public class CheBootializrApplicationTests {
 
     @Autowired
     private CheBootalizrProperties cheBootalizrProperties;
 
+    @Autowired
+    private InitializrMetadataProvider initializrMetadataProvider;
+
     @Test
     public void test_properties_are_loaded() {
-
-
         assertThat(cheBootalizrProperties).isNotNull();
         assertThat(cheBootalizrProperties.getChe()).isNotNull();
-        assertThat(cheBootalizrProperties.getChe().getUrl()).isNull();
+        assertThat(cheBootalizrProperties.getChe().getServiceUrl()).isNotNull();
+        assertThat(cheBootalizrProperties.getChe().getServiceUrl()).isEqualTo("http://che.example.com");
+    }
+
+    @Test
+    public void should_load_static_boot_versions() {
+        assertThat(initializrMetadataProvider).isNotNull();
+        assertThat(initializrMetadataProvider.get().getBootVersions().getContent()).isNotNull();
+        assertThat(initializrMetadataProvider.get().getBootVersions().getContent().size()).isEqualTo(2);
+        assertThat(initializrMetadataProvider.get().getBootVersions().getContent().get(0).getName()).isEqualTo("1.5.7");
+    }
+
+    @Test
+    public void should_have_maven_project_type() {
+        assertThat(initializrMetadataProvider).isNotNull();
+        assertThat(initializrMetadataProvider.get().getTypes().getContent()).isNotNull();
+        assertThat(initializrMetadataProvider.get().getTypes().getContent().size()).isEqualTo(1);
+        assertThat(initializrMetadataProvider.get().getTypes().getContent().get(0).getName()).isEqualTo("Maven Project");
     }
 
 }

@@ -4,7 +4,7 @@
     "environments": {
       "default": {
         "recipe": {
-          "location": "${dockerImage}",
+          "location": "{{dockerImage}}",
           "type": "dockerimage"
         },
         "machines": {
@@ -26,9 +26,9 @@
     "projects": [
       {
         "links": [],
-        "description": "${description}",
+        "description": "{{description}}",
         "source": {
-          "location": "${githubRepoUrl}",
+          "location": "{{githubRepoUrl}}",
           "type": "git",
           "parameters": {}
         },
@@ -37,9 +37,9 @@
           "pullrequest"
         ],
         "problems": [],
-        "name": "${artifactId}",
+        "name": "{{artifactId}}",
         "type": "maven",
-        "path": "/${artifactId}",
+        "path": "/{{artifactId}}",
         "attributes": {
           "language": [
             "java"
@@ -47,8 +47,7 @@
         }
       }
     ],
-    "name": "${artifactId}",
-    <#noparse>
+    "name": "{{artifactId}}",
     "commands": [
       {
         "commandLine": "scl enable rh-maven33 'mvn install -f ${current.project.path}'",
@@ -88,7 +87,6 @@
       }
     ]
   },
-  </#noparse>
   "policies": {
     "create": "perClick"
   },
@@ -98,7 +96,7 @@
         {
           "id": "openFile",
           "properties": {
-            "file": "/${artifactId}/pom.xml"
+            "file": "/{{artifactId}}/pom.xml"
           }
         }
       ]

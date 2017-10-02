@@ -17,17 +17,27 @@ package com.redhat.developers.service;
 
 import com.redhat.developers.config.CheBootalizrProperties;
 import com.redhat.developers.vo.RepoVO;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.text.StrSubstitutor;
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.internal.storage.file.FileRepository;
+import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.lib.StoredConfig;
+import org.eclipse.jgit.revwalk.RevCommit;
+import org.eclipse.jgit.transport.RefSpec;
+import org.eclipse.jgit.transport.RemoteConfig;
+import org.eclipse.jgit.transport.URIish;
+import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.kohsuke.github.GHFileNotFoundException;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GitHub;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.ResourceUtils;
-import org.springframework.util.StringUtils;
 
 import javax.annotation.PostConstruct;
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -38,17 +48,18 @@ import java.nio.file.Paths;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @Slf4j
-public class GitHubRepoServiceImpl implements RepoService {
+public class GitHubRepoService {
 
     private final CheBootalizrProperties cheBootalizrProperties;
 
     private String githubUserId;
     private String githubUserToken;
 
-    public GitHubRepoServiceImpl(CheBootalizrProperties cheBootalizrProperties) {
+    public GitHubRepoService(CheBootalizrProperties cheBootalizrProperties) {
         this.cheBootalizrProperties = cheBootalizrProperties;
     }
 
@@ -83,7 +94,6 @@ public class GitHubRepoServiceImpl implements RepoService {
         }
     }
 
-    @Override
     public Optional<RepoVO> createRepo(String repoName, String description) throws IOException {
 
         final GitHub gitHub = getConnection();
@@ -110,7 +120,6 @@ public class GitHubRepoServiceImpl implements RepoService {
         return ghRepo;
     }
 
-    @Override
     public Optional<RepoVO> getRepo(String repoName) throws IOException {
 
         try {
@@ -127,8 +136,6 @@ public class GitHubRepoServiceImpl implements RepoService {
         }
     }
 
-
-    @Override
     public boolean deleteRepo(String repoName) throws IOException {
 
         try {
@@ -143,6 +150,50 @@ public class GitHubRepoServiceImpl implements RepoService {
             return false;
         } catch (IOException e) {
             throw e;
+        }
+
+    }
+
+    public void pushContentToOrigin(String repoName, File dir)
+        throws IOException, URISyntaxException, GitAPIException {
+        try (Git git = Git.init()
+            .setDirectory(dir)
+            .call()) {
+
+            Repository repository = git.getRepository();
+
+            //Create or get repository
+            Optional<RepoVO> repoVO = getRepo(repoName);
+
+            //Create Repository if it does not exist
+            if (!repoVO.isPresent()) {
+                repoVO = createRepo(repoName, "Repo for " + repoName);
+            }
+
+            //Set Remote
+            final StoredConfig config = repository.getConfig();
+            RemoteConfig remoteConfig = new RemoteConfig(config, "origin");
+            final URIish uri = new URIish(repository.getDirectory().toURI().toURL());
+            final URIish remotePushURI = new URIish(repoVO.get().getHttpUrl());
+            remoteConfig.addURI(uri);
+            remoteConfig.addPushURI(remotePushURI);
+            remoteConfig.update(config);
+            config.save();
+            config.save();
+
+            //Add files to index
+            git.add().addFilepattern(".").call();
+
+            //Create commit
+            RevCommit commit = git.commit().setMessage("Initial Commit by CheBootalizr").call();
+            RefSpec refSpec = new RefSpec("refs/heads/master");
+            git.push()
+                .setRemote("origin")
+                .setCredentialsProvider(new UsernamePasswordCredentialsProvider(githubUserId, githubUserToken))
+                .setRefSpecs(refSpec)
+                .call();
+
+            Objects.equals(commit.getId(), repository.resolve(commit.getId().getName() + "^{commit}"));
         }
 
     }

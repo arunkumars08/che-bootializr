@@ -29,8 +29,7 @@ public class CheBootalizrProperties {
     @Data
     @NoArgsConstructor(force = true)
     public static class Che {
-        String url;
-        String serviceName;
+        String serviceUrl;
     }
     private Che che;
 }

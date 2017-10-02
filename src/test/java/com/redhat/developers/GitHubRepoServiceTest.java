@@ -16,7 +16,7 @@
 package com.redhat.developers;
 
 import com.redhat.developers.config.CheBootalizrProperties;
-import com.redhat.developers.service.GitHubRepoServiceImpl;
+import com.redhat.developers.service.GitHubRepoService;
 import com.redhat.developers.vo.RepoVO;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -39,7 +39,7 @@ import static org.mockito.Mockito.when;
 public class GitHubRepoServiceTest {
 
     @Mock
-    GitHubRepoServiceImpl gitHubRepoService;
+    GitHubRepoService gitHubRepoService;
 
     @Test
     public void should_create_and_return_repo_demo() throws IOException {

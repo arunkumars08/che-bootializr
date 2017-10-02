@@ -1,33 +1,27 @@
 package com.redhat.developers.project;
 
-import com.redhat.developers.service.RepoService;
+import com.redhat.developers.config.CheBootalizrProperties;
+import com.redhat.developers.service.GitHubRepoService;
 import com.redhat.developers.service.TemplateService;
+import com.redhat.developers.utils.GeneralUtil;
+import com.redhat.developers.vo.CheSpringBootProjectVO;
 import com.redhat.developers.vo.RepoVO;
-import freemarker.template.TemplateException;
 import io.spring.initializr.generator.BasicProjectRequest;
 import io.spring.initializr.generator.ProjectGenerator;
 import io.spring.initializr.generator.ProjectRequest;
 import io.spring.initializr.metadata.DependencyMetadataProvider;
+import io.spring.initializr.metadata.InitializrMetadata;
 import io.spring.initializr.metadata.InitializrMetadataProvider;
-import io.spring.initializr.util.TemplateRenderer;
-import io.spring.initializr.web.project.MainController;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.tools.ant.Project;
-import org.apache.tools.ant.taskdefs.Zip;
-import org.apache.tools.ant.types.ZipFileSet;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.stereotype.Controller;
-import org.springframework.util.StreamUtils;
-import org.springframework.util.StringUtils;
-import org.springframework.web.servlet.resource.ResourceUrlProvider;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.ModelAndView;
 
+import java.beans.PropertyDescriptor;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -36,7 +30,7 @@ import java.util.Optional;
 
 @Controller
 @Slf4j
-public class CheProjectController extends MainController {
+public class CheProjectController {
 
 
     private static final String DEFAULT_SPRING_BOOT_CHE_IMAGE = "rhche/spring-boot";
@@ -44,31 +38,62 @@ public class CheProjectController extends MainController {
     private final ProjectGenerator projectGenerator;
 
     private final TemplateService templateService;
+    private final GitHubRepoService gitHubRepoService;
+    private final InitializrMetadataProvider metadataProvider;
+    private final DependencyMetadataProvider dependencyMetadataProvider;
+    private final CheBootalizrProperties cheBootalizrProperties;
 
-    private final RepoService repoService;
-
-    public CheProjectController(InitializrMetadataProvider metadataProvider, TemplateRenderer templateRenderer,
-                                ResourceUrlProvider resourceUrlProvider, ProjectGenerator projectGenerator,
-                                DependencyMetadataProvider dependencyMetadataProvider, TemplateService templateService,
-                                RepoService repoService) {
-        super(metadataProvider, templateRenderer, resourceUrlProvider, projectGenerator, dependencyMetadataProvider);
+    public CheProjectController(InitializrMetadataProvider metadataProvider,
+                                DependencyMetadataProvider dependencyMetadataProvider,
+                                ProjectGenerator projectGenerator, TemplateService templateService,
+                                GitHubRepoService gitHubRepoService, CheBootalizrProperties cheBootalizrProperties) {
         this.projectGenerator = projectGenerator;
         this.templateService = templateService;
-        this.repoService = repoService;
+        this.gitHubRepoService = gitHubRepoService;
+        this.metadataProvider = metadataProvider;
+        this.dependencyMetadataProvider = dependencyMetadataProvider;
+        this.cheBootalizrProperties = cheBootalizrProperties;
+
+    }
+
+    @ModelAttribute
+    public BasicProjectRequest projectRequest(@RequestHeader Map<String, String> headers) {
+        ProjectRequest projectRequest = new ProjectRequest();
+        projectRequest.getParameters().putAll(headers);
+        projectRequest.initialize(metadataProvider.get());
+        return projectRequest;
+    }
+
+    @GetMapping("/")
+    public String home(Map<String, Object> model) {
+        InitializrMetadata metadata = metadataProvider.get();
+
+        BeanWrapperImpl beanWrapper = new BeanWrapperImpl(metadata);
+        for (PropertyDescriptor descriptor : beanWrapper.getPropertyDescriptors()) {
+            model.put(descriptor.getName(), beanWrapper.getPropertyValue(descriptor.getName()));
+        }
+        model.put("defaultAction", "cheproject");
+        return "home";
     }
 
 
-    public ResponseEntity<byte[]> springZip(BasicProjectRequest request) {
+    @RequestMapping(value = "/cheproject")
+    public ModelAndView springbootCheProject(BasicProjectRequest request, ModelAndView modelAndView) {
         try {
 
             log.info("Creating Project with Che-Starter");
 
             Map<String, String> projectContext = new HashMap<>();
 
-            String projectDescription = request.getDescription();
-            String projectArtifactId = request.getArtifactId();
+            final String projectDescription = request.getDescription();
+            final String projectArtifactId = request.getArtifactId();
+            final String projectGroupId = request.getGroupId();
+            final String projectName = request.getName();
+            final String projectPackaging = request.getPackaging();
 
-            Optional<RepoVO> optRepoVo = repoService.createRepo(projectArtifactId, projectDescription);
+            Optional<RepoVO> optRepoVo = gitHubRepoService.createRepo(projectArtifactId, projectDescription);
+
+            //FIXME if repo exists already then just return URL with existing repo
 
             if (optRepoVo.isPresent()) {
 
@@ -76,7 +101,6 @@ public class CheProjectController extends MainController {
                 projectContext.put("description", projectDescription);
                 projectContext.put("githubRepoUrl", optRepoVo.get().getHttpUrl());
                 projectContext.put("dockerImage", DEFAULT_SPRING_BOOT_CHE_IMAGE);
-
 
                 //Step-2 Generate Project as zip with Che .factory.json
                 String factoryJson = templateService.buildFactoryJsonFromTemplate(projectContext);
@@ -87,7 +111,7 @@ public class CheProjectController extends MainController {
 
                 File projectDir = projectGenerator.generateProjectStructure(projectRequest);
 
-                File projectDistribution = projectGenerator.createDistributionFile(projectDir, ".zip");
+                log.trace("Project created at : {}", projectDir);
 
                 String wrapperScript = request.getBaseDir() != null
                     ? request.getBaseDir() + "/mvnw" : "mvnw";
@@ -100,68 +124,63 @@ public class CheProjectController extends MainController {
                 //Write Che Factory Json File
                 Files.write(Paths.get(projectDir.getAbsolutePath(), factoryJsonFile), factoryJson.getBytes());
 
-                Zip projectZip = new Zip();
-                projectZip.setProject(new Project());
+                // Step-2  Push the contents to GitHub
+                String repoName = StringUtils.replace(projectArtifactId, " ", "_");
+                Optional<RepoVO> gitHubRepo = gitHubRepoService.createRepo(repoName, projectDescription);
 
-                ZipFileSet zipFileSet = new ZipFileSet();
-                zipFileSet.setDir(projectDir);
-                zipFileSet.setFileMode("755");
-                zipFileSet.setIncludes("**,");
-                zipFileSet.setExcludes(wrapperScript);
-                zipFileSet.setDefaultexcludes(false);
-                projectZip.addFileset(zipFileSet);
-                projectZip.setDestFile(projectDistribution.getCanonicalFile());
-                projectZip.execute();
+                if (gitHubRepo.isPresent()) {
 
-                //FIXME: Step-2  Push the contents to GitHub
+                    gitHubRepoService.pushContentToOrigin(gitHubRepo.get().getName(),
+                        Paths.get(projectDir.getAbsolutePath(),
+                            request.getBaseDir() != null ? request.getBaseDir() : "/").toFile());
 
+                    CheSpringBootProjectVO response = buildResponse(gitHubRepo.get(), projectArtifactId, projectGroupId,
+                        projectName, projectPackaging);
 
-                //Build Response
+                    modelAndView.getModel().put("projectInfo", response);
 
-                String downloadFileName = sanitizedUrlEncodedName(projectArtifactId, "zip");
-                String contentDispositionHeaderValue = "attachment; filename=\"" + downloadFileName + "\"";
+                }
 
-                byte[] bytes = StreamUtils.copyToByteArray(new FileInputStream(projectDistribution));
-
-                projectGenerator.cleanTempFiles(projectDir);
-
-                return ResponseEntity.ok()
-                    .header("Content-Type", "application/zip")
-                    .header("Content-Disposition", contentDispositionHeaderValue)
-                    .body(bytes);
+                modelAndView.setViewName("ok");
 
             } else {
                 log.info("Repo not present, hence skipping creation");
-                return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+                modelAndView.setViewName("error");
             }
 
         } catch (IOException e) {
             log.error("Error:", e);
-            return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        } catch (TemplateException e) {
-            log.error("Error:", e);
-            return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            modelAndView.setViewName("error");
         } catch (Exception e) {
             log.error("Error:", e);
-            return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            modelAndView.setViewName("error");
         }
+
+        return modelAndView;
     }
 
+
     /**
-     * @param projectArtifactId
-     * @param extension
+     * @param repoVO
+     * @param artifactId
+     * @param groupId
+     * @param name
+     * @param packaging
      * @return
      */
-    private String sanitizedUrlEncodedName(String projectArtifactId, String extension) {
-        String baseName = StringUtils.replace(projectArtifactId, " ", "_");
-        try {
-            return URLEncoder.encode(baseName, "UTF-8") + "." + extension;
-        } catch (UnsupportedEncodingException e) {
-            throw new IllegalStateException(e);
-        }
+    protected CheSpringBootProjectVO buildResponse(RepoVO repoVO, String artifactId, String groupId, String name, String packaging) {
+        String workspaceUrl = String.format("%s/f?url=%s", cheBootalizrProperties.getChe().getServiceUrl()
+            , GeneralUtil.sanitizeGitUrl(repoVO.getHttpUrl()));
+
+        CheSpringBootProjectVO cheSpringBootProjectVO = CheSpringBootProjectVO.builder()
+            .artifactId(artifactId)
+            .groupId(groupId)
+            .name(name)
+            .packaging(packaging)
+            .workspaceUrl(workspaceUrl).build();
+
+        return cheSpringBootProjectVO;
     }
+
+
 }

@@ -1,0 +1,78 @@
+html {
+    position: relative;
+    min-height: 100%;
+}
+body {
+    background: #fff;
+    margin-bottom: 60px;
+    font-family: "Overpass","Open Sans",Helvetica,sans-serif;
+    font-weight: normal;
+    font-style: normal;
+    line-height: 150%;
+}
+body, h1, h2, h3 {
+    font-weight: 400;
+}
+
+.btn {
+    background: #c00;
+    text-decoration: none;
+    border: 0;
+}
+
+.btn-primary {
+    margin-top: 1em;
+    background: #c00;
+    text-decoration: none;
+    border: 0;
+    font-size: 16px;
+    line-height: 1.44;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+
+button kbd {
+    background: none;
+    margin-left: 0.5em;
+    box-shadow: none;
+}
+
+.project-info {
+    margin: 1em;
+}
+
+.app-header {
+    color: #eee;
+    background-color: #000000;
+    font-size: 25px;
+    padding: 0.5em 0;
+    border-top: 4px solid red;
+}
+
+.app-header h1 {
+    text-transform: uppercase;
+}
+
+.app-header small {
+    text-transform: none;
+    font-size: 50%;
+}
+
+footer {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 60px;
+    background-color: #000000;
+    border-bottom: 4px solid red;
+    color: #eee;
+    padding: 20px 0;
+}
+
+span .app-title {
+    text-transform: uppercase;
+}
+
+footer a:link,footer a:hover, footer a:focus {
+    color: #858585;
+}
