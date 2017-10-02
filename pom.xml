@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
@@ -32,6 +32,10 @@
     <openshift-client.version>2.6.3</openshift-client.version>
     <arquillian-junit-container.version>1.1.12.Final</arquillian-junit-container.version>
     <thymeleaf.version>3.0.7.RELEASE</thymeleaf.version>
+    <jquery.version>3.2.1</jquery.version>
+    <bootstrap.version>3.3.7-1</bootstrap.version>
+    <org.eclipse.jgit.version>4.8.0.201706111038-r</org.eclipse.jgit.version>
+    <initializr-generator.version>0.5.0.BUILD-SNAPSHOT</initializr-generator.version>
   </properties>
 
   <dependencyManagement>
@@ -40,6 +44,13 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-dependencies</artifactId>
         <version>${spring-boot.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-starter-kubernetes-all</artifactId>
+        <version>0.2.0.RELEASE</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -63,13 +74,18 @@
 
     <dependency>
       <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-actuator</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-web</artifactId>
     </dependency>
 
     <dependency>
       <groupId>io.spring.initializr</groupId>
       <artifactId>initializr-generator</artifactId>
-      <version>0.5.0.BUILD-SNAPSHOT</version>
+      <version>${initializr-generator.version}</version>
     </dependency>
 
     <dependency>
@@ -81,13 +97,20 @@
     <dependency>
       <groupId>org.eclipse.jgit</groupId>
       <artifactId>org.eclipse.jgit</artifactId>
-      <version>4.8.0.201706111038-r</version>
+      <version>${org.eclipse.jgit.version}</version>
     </dependency>
 
     <dependency>
       <groupId>com.squareup.okhttp3</groupId>
       <artifactId>okhttp</artifactId>
       <version>${okhttp.version}</version>
+    </dependency>
+
+    <!-- Spring Cloud -->
+
+    <dependency>
+      <groupId>org.springframework.cloud</groupId>
+      <artifactId>spring-cloud-kubernetes-config</artifactId>
     </dependency>
 
     <!-- Web -->
@@ -100,13 +123,13 @@
     <dependency>
       <groupId>org.webjars</groupId>
       <artifactId>jquery</artifactId>
-      <version>3.2.1</version>
+      <version>${jquery.version}</version>
     </dependency>
 
     <dependency>
       <groupId>org.webjars</groupId>
       <artifactId>bootstrap</artifactId>
-      <version>3.3.7-1</version>
+      <version>${bootstrap.version}</version>
     </dependency>
 
     <dependency>
@@ -171,6 +194,29 @@
 
   <build>
 
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-failsafe-plugin</artifactId>
+          <executions>
+            <execution>
+              <goals>
+                <goal>integration-test</goal>
+                <goal>verify</goal>
+              </goals>
+            </execution>
+          </executions>
+          <configuration>
+            <additionalClasspathElements>
+              <additionalClasspathElement>${project.build.outputDirectory}/META-INF/fabric8
+              </additionalClasspathElement>
+            </additionalClasspathElements>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -192,24 +238,7 @@
           </execution>
         </executions>
       </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-failsafe-plugin</artifactId>
-        <executions>
-          <execution>
-            <goals>
-              <goal>integration-test</goal>
-              <goal>verify</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <additionalClasspathElements>
-            <additionalClasspathElement>${project.build.outputDirectory}/META-INF/fabric8
-            </additionalClasspathElement>
-          </additionalClasspathElements>
-        </configuration>
-      </plugin>
+
       <plugin>
         <groupId>com.mycila</groupId>
         <artifactId>license-maven-plugin</artifactId>
@@ -242,72 +271,30 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>io.fabric8</groupId>
+        <artifactId>fabric8-maven-plugin</artifactId>
+        <version>3.5.30</version>
+        <executions>
+          <execution>
+            <id>fmp</id>
+            <goals>
+              <goal>resource</goal>
+              <goal>build</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
 
+  <!-- TODO: ADD run-its profile  -->
   <profiles>
-    <profile>
-      <id>kubernetes</id>
-      <properties>
-        <arq.qualifier>kubernetes</arq.qualifier>
-      </properties>
-      <dependencies>
-        <dependency>
-          <groupId>org.arquillian.cube</groupId>
-          <artifactId>arquillian-cube-kubernetes</artifactId>
-          <version>${arquillian-cube.version}</version>
-          <scope>test</scope>
-          <exclusions>
-            <exclusion>
-              <groupId>io.undertow</groupId>
-              <artifactId>undertow-core</artifactId>
-            </exclusion>
-          </exclusions>
-        </dependency>
-        <dependency>
-          <groupId>io.fabric8</groupId>
-          <artifactId>kubernetes-client</artifactId>
-          <version>${kubernetes-client.version}</version>
-          <scope>test</scope>
-        </dependency>
-      </dependencies>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-maven-plugin</artifactId>
-          </plugin>
-          <plugin>
-            <groupId>io.fabric8</groupId>
-            <artifactId>fabric8-maven-plugin</artifactId>
-            <version>${fabric8-maven-plugin.version}</version>
-            <executions>
-              <execution>
-                <id>fmp</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>resource</goal>
-                  <goal>build</goal>
-                </goals>
-              </execution>
-            </executions>
-            <configuration>
-              <enricher>
-                <config>
-                  <fmp-service>
-                    <type>NodePort</type>
-                  </fmp-service>
-                </config>
-              </enricher>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
     <profile>
       <id>openshift</id>
       <properties>
         <arq.qualifier>openshift</arq.qualifier>
+        <skipTests>${skipTests}</skipTests>
       </properties>
       <dependencies>
         <dependency>
@@ -332,6 +319,10 @@
       <build>
         <plugins>
           <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
+          </plugin>
+          <plugin>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-maven-plugin</artifactId>
           </plugin>
@@ -342,7 +333,6 @@
             <executions>
               <execution>
                 <id>fmp</id>
-                <phase>package</phase>
                 <goals>
                   <goal>resource</goal>
                   <goal>build</goal>

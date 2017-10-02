@@ -1,12 +1,96 @@
-# chebootializer
+= CheBootializr
+
+It has not been so easy to get your cloud devlopment environment so quickly with https://projects.spring.io/spring-boot/[Spring Boot]
+and https://www.eclipse.org[Eclipse Che]
 
 
+== Setup
 
-# Creating Github Secret
+The following section details through the setup that is required to have the applications running in your
+local Openshift cluster.
 
+[[pre-req]]
+== Pre-requisites
+
+Please follow the instructions at https://www.eclipse.org/che/docs/setup/openshift/index.html, to have
+the Eclipse Che installed on your OpenShift Cluster.
+
+[[build]]
+=== Build and Install Spring Initializr
+
+The project relies on https://docs.spring.io/initializr[Spring Initializr] to generate Spring Boot projects,
+as https://docs.spring.io/initializr[Spring Initializr] is not available in maven central, we need to
+clone, build and install locally.
+
+[source,sh]
+----
+git clone git@github.com:spring-io/initializr.git <1>
+cd initializr
+./mvnw clean install <2>
+----
+
+<1> Clone the Spring Intializr locally
+<2> build and install to local maven repo
+
+NOTE: Current the application uses 0.5.0.BUILD-SNAPSHOT
+
+[[github-token-gen]]
+=== Creating Github Secret
+
+The project will use your GitHub account to create projects, hence would require you to have
+https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/[Personal Access Token]
+created and configured.
+
+Once you have created https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/[Personal Access Token],
+add your **GitHub userId** to a file called `github.user` and add your **GitHub personal access token** to a
+file called `github.token`. Once you have those files generated follow the steps below have https://kubernetes.io/docs/concepts/configuration/secret/[Kubernetes Secrets]
+created for the same.
+
+[source,sh]
+----
 kubectl create secret generic github-config \
   --from-file ./github.user \ <1>
   --from-file ./github.token <2>
+----
 
 <1> Adds file `github.user` to secret
 <2> Adds file `github.token` to secret
+
+
+=== Enable Github oAuth with Che
+
+You also need to edit <<pre-req,Che Installation>> to make use of the GitHub oAuth to enable commit and push the code to
+your repository, follow the steps below to edit the existing Che Deployment on OpenShift to add GitHub credentials,
+
+Follow instructions https://developer.github.com/apps/building-integrations/setting-up-and-registering-oauth-apps/registering-oauth-apps/[Registering OAuth Apps]
+to create a GitHub oAuth. Note the clientId and secret from your oAuth settings page and set the following two variables in your local environment,
+
+`CHE_OAUTH_GITHUB_CLIENTID` - the GitHub oAuth ClientId
+
+`CHE_OAUTH_GITHUB_CLIENTSECRET` - the GitHub oAuth Client Secret
+
+
+[source,sh]
+----
+
+ENABLE_GITHUB_SCRIPT_URL=https://raw.githubusercontent.com/workspace7/cloud-workspaces/master/scripts/enable_github_oauth.sh
+
+curl -fsSL ${ENABLE_GITHUB_SCRIPT_URL} -o ./enable_github_che.sh
+
+bash ./enable_github_che.sh
+
+----
+
+NOTE: The applications will use oAuth and personal access token over ssh/password for better security
+
+
+==== Build and Deploy application
+
+Once you have all the above steps done, you just need to execute the following command to have the application deployed
+on to the OpenShift cluster.
+
+[source,sh]
+----
+./mvnw clean fabric8:deploy
+----
+
