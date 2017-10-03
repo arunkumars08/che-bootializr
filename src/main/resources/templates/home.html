@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
     <title>CheBootializr:: Red Hat Developers</title>
-    <link href="//fonts.googleapis.com/css?family=Varela+Round|Montserrat:400,700" rel="stylesheet" type="text/css">
     <link rel="stylesheet" href="/webjars/bootstrap/css/bootstrap.min.css"/>
     <link rel="stylesheet" href="/webjars/bootstrap/css/bootstrap-theme.min.css"/>
     <link rel="stylesheet" href="/css/chebootializr.css"/>
@@ -30,22 +29,19 @@
                             <label id="lblType" for="type">Generate a</label>
                             <select id="type" class="form-control" name="type" tabindex="1">
                                 {{#types.content}}
-                                <option data-action="{{action}}" value="{{id}}" {{#default}}selected{{
-                                /default}}>{{name}}</option>
+                                <option data-action="{{action}}" value="{{id}}" {{#default}}selected{{/default}}>{{name}}</option>
                                 {{/types.content}}
                             </select>
                             <label id="lblLanguage" for="language">With</label>
                             <select id="language" class="form-control" name="language" tabindex="2">
                                 {{#languages.content}}
-                                <option value="{{id}}" {{#default}}selected{{
-                                /default}}>{{name}}</option>
+                                <option value="{{id}}" {{#default}}selected{{/default}}>{{name}}</option>
                                 {{/languages.content}}
                             </select>
                             <label id="lblBootVersion" for="bootVersion">Version</label>
                             <select id="bootVersion" class="form-control" name="bootVersion" tabindex="2">
                                 {{#bootVersions.content}}
-                                <option value="{{id}}" {{#default}}selected{{
-                                /default}}>{{name}}</option>
+                                <option value="{{id}}" {{#default}}selected{{/default}}>{{name}}</option>
                                 {{/bootVersions.content}}
                             </select>
                         </span>
@@ -58,11 +54,13 @@
                     <h3>Project Details</h3>
                     <div class="form-group cord-artifact-groupid-group">
                         <label for="groupId" class="control-label">{{groupId.title}}</label>
-                        <input tabindex="4" id="groupId" name="groupId" class="form-control" value="{{groupId.content}}"/>
+                        <input tabindex="4" id="groupId" name="groupId" class="form-control"
+                               value="{{groupId.content}}"/>
                     </div>
                     <div class="form-group cord-artifact-group">
                         <label for="artifactId" class="control-label">{{artifactId.title}}</label>
-                        <input tabindex="5" id="artifactId" name="artifactId" class="form-control" value="{{artifactId.content}}"/>
+                        <input tabindex="5" id="artifactId" name="artifactId" class="form-control"
+                               value="{{artifactId.content}}"/>
                     </div>
                     <div class="form-group cord-artifact-group hidden">
                         <label for="name" class="control-label">{{name.title}}</label>
@@ -70,17 +68,19 @@
                     </div>
                     <div class="form-group cord-artifact-description-group hidden">
                         <label for="description" class="control-label">{{description.title}}</label>
-                        <input tabindex="7" id="description" name="description" class="form-control" value="{{description.content}}"/>
+                        <input tabindex="7" id="description" name="description" class="form-control"
+                               value="{{description.content}}"/>
                     </div>
                     <div class="form-group cord-artifact-package-group hidden">
                         <label for="packageName" class="control-label">{{packageName.title}}</label>
-                        <input tabindex="8" id="packageName" name="packageName" class="form-control" value="{{packageName.content}}"/>
+                        <input tabindex="8" id="packageName" name="packageName" class="form-control"
+                               value="{{packageName.content}}"/>
                     </div>
                     <div class="form-group cord-artifact-packaging-group hidden">
                         <label for="packaging" class="control-label">{{packagings.title}}</label>
                         <select tabindex="9" id="packaging" name="packaging" class="form-control">
                             {{#packagings.content}}
-                              <option value="{{id}}"{{#default}}selected{{/default}}>{{name}}</option>
+                            <option value="{{id}}" {{#default}}selected{{/default}}>{{name}}</option>
                             {{/packagings.content}}
                         </select>
                     </div>
@@ -88,9 +88,25 @@
                         <label for="javaVersion" class="control-label">{{javaVersions.title}}</label>
                         <select tabindex="10" id="javaVersion" name="javaVersion" class="form-control">
                             {{#javaVersions.content}}
-                            <option value="{{id}}"{{#default}}selected{{/default}}>{{name}}</option>
+                            <option value="{{id}}" {{#default}}selected{{/default}}>{{name}}</option>
                             {{/javaVersions.content}}
                         </select>
+                    </div>
+                </div>
+                <div class="col-sm-12 col-md-6">
+                    <h3>Dependencies</h3>
+                    <p>Spring Boot starters and Dependencies that might be required for your application</p>
+                    <div class="form-group">
+                        <label for="depsList" class="control-label">Search and Add Dependencies</label>
+                        <input tabindex="11" id="depsList" class="form-control"
+                               placeholder="Web, Security, Template, Devtools, Actuator ..."
+                               name="depsList"/>
+                    </div>
+                    <div class="form-group">
+                        <label for="depsTags" class="control-label">Selected Dependencies</label>
+                        <div id="depsTags">
+
+                        </div>
                     </div>
                 </div>
             </div>
@@ -98,7 +114,7 @@
         <!-- End  Project Content -->
         <div class="row full">
             <p class="text-center">
-                <button id="genproject" tabindex="14" name="generate-project"  class="btn btn-lg btn-primary">
+                <button id="genproject" tabindex="14" name="generate-project" class="btn btn-lg btn-primary">
                     Generate Project
                 </button>
             </p>
@@ -113,9 +129,9 @@
     </div>
 </footer>
 
-<script src="/webjars/bootstrap/js/bootstrap.min.js"></script>
 <script src="/webjars/jquery/jquery.min.js"></script>
-<script src="/js/typeahead.bundle.min.js"></script>
+<script src="/webjars/bootstrap/js/bootstrap.min.js"></script>
+<script src="/webjars/typeaheadjs/typeahead.bundle.min.js"></script>
 <script src="/js/app.js"></script>
 </body>
 </html>

@@ -1,0 +1,371 @@
+initializr:
+  java-versions:
+    - id: 9
+      default: false
+    - id: 8
+      default: true
+  languages:
+    - name: Java
+      id: java
+      default: true
+  packagings:
+    - name: Jar
+      id: jar
+      default: true
+    - name: War
+      id: war
+      default: false
+  types:
+    - name: Maven Project
+      id: maven-project
+      description: Generates a Maven based project archive
+      tags:
+       build: maven
+       format: project
+      default: true
+      action: /cheproject
+  env:
+    boms:
+      spring-cloud:
+        groupId: org.springframework.cloud
+        artifactId: spring-cloud-dependencies
+        versionProperty: spring-cloud.version
+        order: 50
+        mappings:
+          - versionRange: "[1.4.0.RELEASE,1.4.x.RELEASE]"
+            version: Camden.SR7
+          - versionRange: "[1.5.0.RELEASE,1.5.x.RELEASE]"
+            version: Dalston.SR3
+      vaadin:
+        groupId: com.vaadin
+        artifactId: vaadin-bom
+        versionProperty: vaadin.version
+        mappings:
+          - versionRange: "1.5.0.M1"
+            version: 8.1.0
+      keycloak:
+        groupId: org.keycloak.bom
+        artifactId: keycloak-adapter-bom
+        versionProperty: keycloak.version
+        version: 3.2.1.Final
+  dependencies:
+    - name: Core
+      content:
+        - name: Security
+          id: security
+          description: Secure your application via spring-security
+          weight: 100
+          links:
+            - rel: guide
+              href: https://spring.io/guides/gs/securing-web/
+              description: Securing a Web Application
+            - rel: guide
+              href: https://spring.io/guides/tutorials/spring-boot-oauth2/
+              description: Spring Boot and OAuth2
+            - rel: guide
+              href: https://spring.io/guides/gs/authenticating-ldap/
+              description: Authenticating a User with LDAP
+            - rel: reference
+              href: http://docs.spring.io/spring-boot/docs/{bootVersion}/reference/htmlsingle/#boot-features-security
+        - name: Aspects
+          id: aop
+          description: Create your own Aspects using Spring AOP and AspectJ
+        - name: Atomikos (JTA)
+          id: jta-atomikos
+          description: JTA distributed transactions via Atomikos
+          versionRange: 1.2.0.RELEASE
+          links:
+            - rel: guide
+              href: https://spring.io/guides/gs/managing-transactions/
+              description: Managing Transactions
+            - rel: reference
+              href: http://docs.spring.io/spring-boot/docs/{bootVersion}/reference/htmlsingle/#boot-features-jta-atomikos
+        - name: Bitronix (JTA)
+          id: jta-bitronix
+          description: JTA distributed transactions via Bitronix
+          versionRange: 1.2.0.RELEASE
+          links:
+            - rel: guide
+              href: https://spring.io/guides/gs/managing-transactions/
+              description: Managing Transactions
+            - rel: reference
+              href: http://docs.spring.io/spring-boot/docs/{bootVersion}/reference/htmlsingle/#boot-features-jta-bitronix
+        - name: Narayana (JTA)
+          id: jta-narayana
+          description: JTA distributed transactions via Narayana
+          versionRange: 1.4.0.RELEASE
+          links:
+            - rel: guide
+              href: https://spring.io/guides/gs/managing-transactions/
+              description: Managing Transactions
+            - rel: reference
+              href: http://docs.spring.io/spring-boot/docs/{bootVersion}/reference/htmlsingle/#boot-features-jta-narayana
+        - name: Cache
+          id: cache
+          description: Spring's Cache abstraction
+          versionRange: 1.3.0.RELEASE
+          links:
+            - rel: guide
+              href: https://spring.io/guides/gs/caching/
+              description: Caching Data with Spring
+            - rel: reference
+              href: http://docs.spring.io/spring-boot/docs/{bootVersion}/reference/htmlsingle/#boot-features-caching
+        - name: DevTools
+          id: devtools
+          groupId: org.springframework.boot
+          artifactId: spring-boot-devtools
+          scope: runtime
+          description: Spring Boot Development Tools
+          versionRange: 1.3.0.RELEASE
+          starter: false
+          links:
+            - rel: reference
+              href: http://docs.spring.io/spring-boot/docs/{bootVersion}/reference/htmlsingle/#using-boot-devtools
+        - name: Configuration Processor
+          id: configuration-processor
+          groupId: org.springframework.boot
+          artifactId: spring-boot-configuration-processor
+          scope: compileOnly
+          description: Generate metadata for your custom configuration keys
+          versionRange: 1.2.0.RELEASE
+          starter: false
+          links:
+            - rel: reference
+              href: http://docs.spring.io/spring-boot/docs/{bootVersion}/reference/htmlsingle/#configuration-metadata-annotation-processor
+        - name: Validation
+          id: validation
+          description: JSR-303 validation infrastructure (already included with web)
+          versionRange: 1.3.0.RELEASE
+          links:
+            - rel: guide
+              href: https://spring.io/guides/gs/validating-form-input/
+              title: Validating Form Input
+        - name: Session
+          id: session
+          groupId: org.springframework.session
+          artifactId: spring-session-core
+          description: API and implementations for managing a user’s session information
+          versionRange: "1.3.0.RELEASE"
+          starter: false
+          mappings:
+            - versionRange: "[1.3.0.RELEASE,2.0.0.M2]"
+              artifactId: spring-session
+        - name: Retry
+          id: retry
+          groupId: org.springframework.retry
+          artifactId: spring-retry
+          description: Provide declarative retry support via spring-retry
+          versionRange: 1.3.0.RELEASE
+          starter: false
+        - name: Lombok
+          id: lombok
+          groupId: org.projectlombok
+          artifactId: lombok
+          scope: compileOnly
+          description: Java annotation library which helps to reduce boilerplate code and code faster
+          mappings:
+            - versionRange: "[1.2.0.RELEASE,1.4.0.M1)"
+              version: 1.16.6
+          starter: false
+    - name: Web
+      content:
+        - name: Web
+          id: web
+          description: Full-stack web development with Tomcat and Spring MVC
+          weight: 100
+          facets:
+            - web
+          links:
+            - rel: guide
+              href: https://spring.io/guides/gs/rest-service/
+              description: Building a RESTful Web Service
+            - rel: reference
+              href: http://docs.spring.io/spring-boot/docs/{bootVersion}/reference/htmlsingle/#boot-features-developing-web-applications
+            - rel: guide
+              href: https://spring.io/guides/gs/serving-web-content/
+              description: Serving Web Content with Spring MVC
+            - rel: guide
+              href: https://spring.io/guides/tutorials/bookmarks/
+              description: Building REST services with Spring
+        - name: Reactive Web
+          id: webflux
+          versionRange: 2.0.0.M1
+          description: Reactive web development with Netty and Spring WebFlux
+          weight: 90
+        - name: Websocket
+          id: websocket
+          description: Websocket development with SockJS and STOMP
+          links:
+            - rel: guide
+              href: https://spring.io/guides/gs/messaging-stomp-websocket/
+              description: Using WebSocket to build an interactive web application
+            - rel: reference
+              href: http://docs.spring.io/spring-boot/docs/{bootVersion}/reference/htmlsingle/#boot-features-websockets
+        - name: Web Services
+          id: web-services
+          description: Contract-first SOAP service development with Spring Web Services
+          aliases:
+            - ws
+          mappings:
+            - versionRange: 1.4.0.M3
+              artifactId: spring-boot-starter-web-services
+            - versionRange: "[1.1.0.RELEASE,1.4.0.M3)"
+              artifactId: spring-boot-starter-ws
+          links:
+            - rel: guide
+              href: https://spring.io/guides/gs/producing-web-service/
+              description: Producing a SOAP web service
+            - rel: reference
+              href: http://docs.spring.io/spring-boot/docs/{bootVersion}/reference/htmlsingle/#boot-features-webservices
+        - name: Jersey (JAX-RS)
+          id: jersey
+          description: RESTful Web Services framework with support of JAX-RS
+          versionRange: 1.2.0.RELEASE
+          links:
+            - rel: reference
+              href: http://docs.spring.io/spring-boot/docs/{bootVersion}/reference/htmlsingle/#boot-features-jersey
+        - name: Apache CXF (JAX-RS)
+          id: cxf-jaxrs
+          groupId: org.apache.cxf
+          artifactId: cxf-spring-boot-starter-jaxrs
+          version: 3.1.11
+          description: RESTful Web Services framework with support of JAX-RS
+          versionRange: "[1.4.0.RELEASE,2.0.0.M1)"
+          links:
+            - rel: reference
+              href: https://cxf.apache.org/docs/springboot.html#SpringBoot-SpringBootCXFJAX-RSStarter
+        - name: Ratpack
+          id: ratpack
+          description: Spring Boot integration for the Ratpack framework
+          groupId: io.ratpack
+          artifactId: ratpack-spring-boot
+          version: 1.1.1
+          versionRange: "[1.2.0.RELEASE,2.0.0.M1)"
+          starter: false
+        - name: Vaadin
+          id: vaadin
+          facets:
+            - web
+          groupId: com.vaadin
+          artifactId: vaadin-spring-boot-starter
+          description: Vaadin java web application framework
+          bom: vaadin
+          versionRange: 1.2.0.RELEASE
+          mappings:
+            - versionRange: "[1.2.0.RELEASE,1.4.0.RELEASE)"
+              version: 1.0.2
+            - versionRange: "[1.4.0.RELEASE,1.5.0.M1)"
+              version: 1.2.0
+          links:
+            - rel: guide
+              href: https://spring.io/guides/gs/crud-with-vaadin/
+              description: Creating CRUD UI with Vaadin
+            - rel: reference
+              href: https://vaadin.com/spring
+        - name: Rest Repositories
+          id: data-rest
+          weight: 10
+          description: Exposing Spring Data repositories over REST via spring-data-rest-webmvc
+          links:
+            - rel: guide
+              href: https://spring.io/guides/gs/accessing-data-rest/
+              description: Accessing JPA Data with REST
+            - rel: guide
+              href: https://spring.io/guides/gs/accessing-neo4j-data-rest/
+              description: Accessing Neo4j Data with REST
+            - rel: guide
+              href: https://spring.io/guides/gs/accessing-mongodb-data-rest/
+              description: Accessing MongoDB Data with REST
+            - rel: reference
+              href: http://docs.spring.io/spring-boot/docs/{bootVersion}/reference/htmlsingle/#howto-use-exposing-spring-data-repositories-rest-endpoint
+        - name: HATEOAS
+          id: hateoas
+          description: HATEOAS-based RESTful services
+          versionRange: 1.2.2.RELEASE
+          links:
+            - rel: guide
+              href: https://spring.io/guides/gs/rest-hateoas/
+              description: Building a Hypermedia-Driven RESTful Web Service
+            - rel: reference
+              href: http://docs.spring.io/spring-boot/docs/{bootVersion}/reference/htmlsingle/#boot-features-spring-hateoas
+        - name: Rest Repositories HAL Browser
+          id: data-rest-hal
+          description: Browsing Spring Data REST repositories in your browser
+          groupId: org.springframework.data
+          artifactId: spring-data-rest-hal-browser
+          versionRange: 1.3.0.RELEASE
+          starter: false
+        - name: Mobile
+          id: mobile
+          description: Simplify the development of mobile web applications with spring-mobile
+        - name: REST Docs
+          id: restdocs
+          description: Document RESTful services by combining hand-written and auto-generated documentation
+          groupId: org.springframework.restdocs
+          artifactId: spring-restdocs-mockmvc
+          mappings:
+            - versionRange: "[1.2.0.RELEASE,1.3.0.RC1)"
+              version: 1.0.1.RELEASE
+          scope: test
+        - name: Keycloak
+          id: keycloak
+          description: Keycloak integration, an open source Identity and Access Management solution.
+          groupId: org.keycloak
+          artifactId: keycloak-spring-boot-starter
+          versionRange: "[1.5.3.RELEASE,2.0.0.M1)"
+          bom: keycloak
+          links:
+            - rel: reference
+              href: https://keycloak.gitbooks.io/documentation/securing_apps/topics/oidc/java/spring-boot-adapter.html
+    - name: Template Engines
+      content:
+        - name: Freemarker
+          id: freemarker
+          description: FreeMarker templating engine
+          facets:
+            - web
+          keywords:
+            - template
+          links:
+            - rel: reference
+              href: http://docs.spring.io/spring-boot/docs/{bootVersion}/reference/htmlsingle/#boot-features-spring-mvc-template-engines
+        - name: Groovy Templates
+          id: groovy-templates
+          description: Groovy templating engine
+          facets:
+            - web
+          links:
+            - rel: reference
+              href: http://docs.spring.io/spring-boot/docs/{bootVersion}/reference/htmlsingle/#boot-features-spring-mvc-template-engines
+        - name: Thymeleaf
+          id: thymeleaf
+          description: Thymeleaf templating engine, including integration with Spring
+          weight: 100
+          facets:
+            - web
+          keywords:
+            - template
+          links:
+            - rel: guide
+              href: https://spring.io/guides/gs/handling-form-submission/
+              description: Handling Form Submission
+            - rel: reference
+              href: http://docs.spring.io/spring-boot/docs/{bootVersion}/reference/htmlsingle/#boot-features-spring-mvc-template-engines
+        - name: Mustache
+          id: mustache
+          description: Mustache templating engine
+          versionRange: 1.2.2.RELEASE
+          facets:
+            - web
+          keywords:
+            - template
+          links:
+            - rel: reference
+              href: http://docs.spring.io/spring-boot/docs/{bootVersion}/reference/htmlsingle/#boot-features-spring-mvc-template-engines
+
+
+chebootializr:
+  git:
+    fileName: ~/.github
+  che:
+    service-url: http://che-eclipse-che.192.168.64.8.nip.io
