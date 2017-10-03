@@ -2,14 +2,16 @@ html {
     position: relative;
     min-height: 100%;
 }
+
 body {
     background: #fff;
     margin-bottom: 60px;
-    font-family: "Overpass","Open Sans",Helvetica,sans-serif;
+    font-family: "Overpass", "Open Sans", Helvetica, sans-serif;
     font-weight: normal;
     font-style: normal;
     line-height: 150%;
 }
+
 body, h1, h2, h3 {
     font-weight: 400;
 }
@@ -74,7 +76,7 @@ span .app-title {
 }
 
 .close:hover {
- color: #fff;
+    color: #fff;
 }
 
 .tag {
@@ -90,6 +92,19 @@ span .app-title {
 .tag .close {
     float: none;
     margin-left: 0.2em;
+}
+
+.panel {
+    border-color: #0088ce !important;
+}
+
+.panel-heading {
+    background: #fff !important;
+    color: #0088ce !important;
+}
+
+.panel-body {
+    border-top-color: #0088ce !important;
 }
 
 /* Dependencies Searcher */
@@ -170,6 +185,6 @@ span .app-title {
 
 /* End Dependencies Searcher */
 
-footer a:link,footer a:hover, footer a:focus {
+footer a:link, footer a:hover, footer a:focus {
     color: #858585;
 }

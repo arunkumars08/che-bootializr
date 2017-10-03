@@ -49,9 +49,12 @@
                 </div>
             </div>
             <input id="baseDir" name="baseDir" type="hidden" value="{{artifactId.content}}">
+            <!-- Start Basic Row-->
             <div class="row">
                 <div class="col-sm-12 col-md-6">
+
                     <h3>Project Details</h3>
+
                     <div class="form-group cord-artifact-groupid-group">
                         <label for="groupId" class="control-label">{{groupId.title}}</label>
                         <input tabindex="4" id="groupId" name="groupId" class="form-control"
@@ -62,35 +65,55 @@
                         <input tabindex="5" id="artifactId" name="artifactId" class="form-control"
                                value="{{artifactId.content}}"/>
                     </div>
-                    <div class="form-group cord-artifact-group hidden">
-                        <label for="name" class="control-label">{{name.title}}</label>
-                        <input tabindex="6" id="name" name="name" class="form-control" value="{{name.content}}"/>
-                    </div>
-                    <div class="form-group cord-artifact-description-group hidden">
-                        <label for="description" class="control-label">{{description.title}}</label>
-                        <input tabindex="7" id="description" name="description" class="form-control"
-                               value="{{description.content}}"/>
-                    </div>
-                    <div class="form-group cord-artifact-package-group hidden">
-                        <label for="packageName" class="control-label">{{packageName.title}}</label>
-                        <input tabindex="8" id="packageName" name="packageName" class="form-control"
-                               value="{{packageName.content}}"/>
-                    </div>
-                    <div class="form-group cord-artifact-packaging-group hidden">
-                        <label for="packaging" class="control-label">{{packagings.title}}</label>
-                        <select tabindex="9" id="packaging" name="packaging" class="form-control">
-                            {{#packagings.content}}
-                            <option value="{{id}}" {{#default}}selected{{/default}}>{{name}}</option>
-                            {{/packagings.content}}
-                        </select>
-                    </div>
-                    <div class="form-group cord-artifact-package-group hidden">
-                        <label for="javaVersion" class="control-label">{{javaVersions.title}}</label>
-                        <select tabindex="10" id="javaVersion" name="javaVersion" class="form-control">
-                            {{#javaVersions.content}}
-                            <option value="{{id}}" {{#default}}selected{{/default}}>{{name}}</option>
-                            {{/javaVersions.content}}
-                        </select>
+
+                    <div id="projectAdvDetails" class="row panel-group">
+                        <!-- Advanced Project Details -->
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h4 class="panel-title">
+                                    <a data-toggle="collapse" data-parent="#projectAdvDetails" href="#prjAdvDetails">
+                                        <span class="glyphicon glyphicon-plus"></span>Advanced
+                                    </a>
+                                </h4>
+                            </div>
+                            <div id="prjAdvDetails" class="panel-collapse collapse">
+                                <div class="panel-body">
+                                    <div class="form-group cord-artifact-group">
+                                        <label for="name" class="control-label">{{name.title}}</label>
+                                        <input tabindex="6" id="name" name="name" class="form-control"
+                                               value="{{name.content}}"/>
+                                    </div>
+                                    <div class="form-group cord-artifact-description-group ">
+                                        <label for="description" class="control-label">{{description.title}}</label>
+                                        <input tabindex="7" id="description" name="description" class="form-control"
+                                               value="{{description.content}}"/>
+                                    </div>
+                                    <div class="form-group cord-artifact-package-group">
+                                        <label for="packageName" class="control-label">{{packageName.title}}</label>
+                                        <input tabindex="8" id="packageName" name="packageName" class="form-control"
+                                               value="{{packageName.content}}"/>
+                                    </div>
+                                    <div class="form-group cord-artifact-packaging-group">
+                                        <label for="packaging" class="control-label">{{packagings.title}}</label>
+                                        <select tabindex="9" id="packaging" name="packaging" class="form-control">
+                                            {{#packagings.content}}
+                                            <option value="{{id}}" {{#default}}selected{{
+                                            /default}}>{{name}}</option>
+                                            {{/packagings.content}}
+                                        </select>
+                                    </div>
+                                    <div class="form-group cord-artifact-package-group">
+                                        <label for="javaVersion" class="control-label">{{javaVersions.title}}</label>
+                                        <select tabindex="10" id="javaVersion" name="javaVersion" class="form-control">
+                                            {{#javaVersions.content}}
+                                            <option value="{{id}}" {{#default}}selected{{
+                                            /default}}>{{name}}</option>
+                                            {{/javaVersions.content}}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="col-sm-12 col-md-6">
@@ -110,14 +133,60 @@
                     </div>
                 </div>
             </div>
-        </div>
-        <!-- End  Project Content -->
-        <div class="row full">
-            <p class="text-center">
-                <button id="genproject" tabindex="14" name="generate-project" class="btn btn-lg btn-primary">
-                    Generate Project
-                </button>
-            </p>
+
+            <div class="row">
+                <p class="text-center">
+                    <button name="genproject" tabindex="12" name="generate-project" class="btn btn-lg btn-primary">
+                        Generate Project
+                    </button>
+                </p>
+            </div>
+            <!-- End Basic Row-->
+
+            <div id="dependenciesAdvDetails" class="row panel-group">
+                <!-- Advanced Project Details -->
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h4 class="panel-title">
+                            <a data-toggle="collapse" data-parent="#dependenciesAdvDetails" href="#depsAdvDetails">
+                                <span class="glyphicon glyphicon-plus"></span>Want to configure more dependency details?
+                            </a>
+                        </h4>
+                    </div>
+                    <div id="depsAdvDetails" class="panel-collapse collapse">
+                        <div class="panel-body">
+                            <div class="row">
+                                {{#dependencies.content}}
+                                <div class="form-group col-sm-6">
+                                    <h3>{{name}}</h3>
+                                    {{#content}}
+                                    <div class="checkbox"
+                                         data-range="{{#versionRange}}{{versionRange}}{{/versionRange}}">
+                                        <label>
+                                            <input tabindex="13" type="checkbox" name="style" value="{{id}}">{{name}}
+                                            <p class="help-block">{{#description}}{{.}}{{/description}}</p>
+                                            {{#versionRequirement}}
+                                            <p class="help-block version-requirement">requires Spring Boot {{.}}</p>
+                                            {{/versionRequirement}}
+                                        </label>
+                                    </div>
+                                    {{/content}}
+                                </div>
+                                {{/dependencies.content}}
+                            </div>
+
+                            <div class="row">
+                                <p class="text-center">
+                                    <button name="genproject" tabindex="14" class="btn btn-lg btn-primary">
+                                        Generate Project
+                                    </button>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 </form>

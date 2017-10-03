@@ -11,10 +11,6 @@ $(function () {
         $("#depsTags div[data-id='" + id + "']").remove();
     };
 
-    var isTagExists = function (id) {
-        return $("#depsTags div[data-id='" + id + "']") === undefined;
-    };
-
     var depsSearcher = function (engine, bootVersion) {
 
         $.getJSON({
@@ -31,13 +27,13 @@ $(function () {
     };
 
     var bDeps = new Bloodhound({
-        datumTokenizer: Bloodhound.tokenizers.obj.nonword('group', 'name', 'description', 'keywords'),
+        datumTokenizer: Bloodhound.tokenizers.obj.nonword('name', 'description', 'keywords', 'group'),
         queryTokenizer: Bloodhound.tokenizers.nonword,
         identify: function (item) {
             return item.id;
         },
         sorter: function (left, right) {
-            return left.weight - right.weight;
+            return right.weight - left.weight ;
         },
         cache: false,
         limit: 5
@@ -65,14 +61,47 @@ $(function () {
 
 
     $('#depsList').bind('typeahead:select', function (event, dep) {
-        if (!isTagExists(dep.id)) {
+        var chkBox = $("#depsAdvDetails input[value='" + dep.id + "']");
+        var isSelected = chkBox.prop('checked');
+        if (isSelected) {
+            removeTag(id);
+            chkBox.prop('checked', false);
+        } else {
             addTag(dep.id, dep.name);
+            chkBox.prop('checked', true);
         }
+        $('#depsList').typeahead('val', '');
     });
 
     $('#depsTags').on('click', "button", function () {
         var id = $(this).parent().attr('data-id');
         removeTag(id);
+        $("#depsAdvDetails input[value='" + id + "']").prop('checked', false);
     })
+
+    $("#depsAdvDetails input").bind("change", function () {
+        var value = $(this).val()
+        if ($(this).prop('checked')) {
+            var results = bDeps.get(value);
+            addTag(results[0].id, results[0].name);
+        } else {
+            removeTag(value);
+        }
+    });
+
+
+    //Accordion
+
+    // Add minus icon for collapse element which is open by default
+    $(".collapse.in").each(function () {
+        $(this).siblings(".panel-heading").find(".glyphicon").addClass("glyphicon-minus").removeClass("glyphicon-plus");
+    });
+
+    // Toggle plus minus icon on show hide of collapse element
+    $(".collapse").on('show.bs.collapse', function () {
+        $(this).parent().find(".glyphicon").removeClass("glyphicon-plus").addClass("glyphicon-minus");
+    }).on('hide.bs.collapse', function () {
+        $(this).parent().find(".glyphicon").removeClass("glyphicon-minus").addClass("glyphicon-plus");
+    });
 
 });
