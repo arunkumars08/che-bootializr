@@ -2,12 +2,16 @@
 <html lang="en">
 <head>
     <title>CheBootializr:: Red Hat Developers</title>
-    <link href="//fonts.googleapis.com/css?family=Varela+Round|Montserrat:400,700" rel="stylesheet" type="text/css">
     <link rel="stylesheet" href="/webjars/bootstrap/css/bootstrap.min.css"/>
     <link rel="stylesheet" href="/webjars/bootstrap/css/bootstrap-theme.min.css"/>
     <link rel="stylesheet" href="/css/chebootializr.css"/>
     <link rel="shortcut icon" type="image/x-icon" href="/img/favicon.png"/>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    {{#projectInfo}}
+       {{#created}}
+          <meta http-equiv="refresh" content="2;url={{workspaceUrl}}/" />
+       {{/created}}
+    {{/projectInfo}}
 </head>
 <body>
 {{#projectInfo}}
@@ -19,10 +23,20 @@
             </h1>
         </div>
     </div>
+    <h1>&nbsp;</h1>
+    <br/>
     <div class="container start-main">
         <div class="alert alert-success fade in">
+            {{#created}}
             <strong>Successfully generated project {{name}}</strong>, you will be redirected to your
-            <a href="#{{workspaceUrl}}" target="_blank" class="alert-link">workspace</a> im few seconds.
+            <a href="{{workspaceUrl}}" target="_blank" class="alert-link">workspace</a> in few seconds.
+            {{/created}}
+
+            {{^created}}
+            <strong>Project {{name}} already exists in your repo</strong>, if you don't have Che workspace click
+            <a href="{{workspaceUrl}}" target="_blank" class="alert-link">here</a> to create and open a new one.
+            {{/created}}
+
         </div>
     </div>
 </div>
@@ -34,9 +48,8 @@
             and <a href="https://developers.redhat.com">Red Hat Developers</a></p>
     </div>
 </footer>
-<script src="/webjars/bootstrap/js/bootstrap.min.js"></script>
 <script src="/webjars/jquery/jquery.min.js"></script>
-<script src="/js/typeahead.bundle.min.js"></script>
-<script src="/js/app.js"></script>
+<script src="/webjars/bootstrap/js/bootstrap.min.js"></script>
 </body>
 </html>
+

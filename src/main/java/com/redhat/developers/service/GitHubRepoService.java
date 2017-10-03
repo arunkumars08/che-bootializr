@@ -1,12 +1,12 @@
 /**
  * Copyright (c) 2017 Red Hat, Inc.
- *
+ * <p>
  * Red Hat licenses this file to you under the Apache License, version
  * 2.0 (the "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
@@ -42,6 +42,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Objects;
 import java.util.Optional;
@@ -108,7 +109,7 @@ public class GitHubRepoService {
             log.info("Successfully Created repository {}, push URL {}",
                 ghRepository.getName(), ghRepository.getGitTransportUrl());
 
-            ghRepo = buildAndReturnRepoVO(ghRepository);
+            ghRepo = buildAndReturnRepoVO(ghRepository, true);
 
         } else {
             log.info("Repository {} already exists, skipping creation", ghRepo.get().getName());
@@ -123,9 +124,9 @@ public class GitHubRepoService {
             final GitHub gitHub = getConnection();
             log.info("Retrieving repository {} with GitHub user {}", repoName, githubUserId);
             GHRepository ghRepository = gitHub.getRepository(String.format("%s/%s", githubUserId, repoName));
-            return buildAndReturnRepoVO(ghRepository);
+            return buildAndReturnRepoVO(ghRepository, false);
         } catch (GHFileNotFoundException e) {
-            log.info("Repository {} does not exists, skipping delete", repoName);
+            log.info("Repository {} does not exists", repoName);
             return Optional.ofNullable(null);
         } catch (IOException e) {
             log.error("Unable to get repo ", e);
@@ -151,7 +152,16 @@ public class GitHubRepoService {
 
     }
 
-    public void pushContentToOrigin(String repoName, File dir)
+    /**
+     *
+     * @param repoName
+     * @param dir
+     * @param repoVO
+     * @throws IOException
+     * @throws URISyntaxException
+     * @throws GitAPIException
+     */
+    public void pushContentToOrigin(String repoName, File dir, RepoVO repoVO)
         throws IOException, URISyntaxException, GitAPIException {
         try (Git git = Git.init()
             .setDirectory(dir)
@@ -159,23 +169,14 @@ public class GitHubRepoService {
 
             Repository repository = git.getRepository();
 
-            //Create or get repository
-            Optional<RepoVO> repoVO = getRepo(repoName);
-
-            //Create Repository if it does not exist
-            if (!repoVO.isPresent()) {
-                repoVO = createRepo(repoName, "Repo for " + repoName);
-            }
-
             //Set Remote
             final StoredConfig config = repository.getConfig();
             RemoteConfig remoteConfig = new RemoteConfig(config, "origin");
             final URIish uri = new URIish(repository.getDirectory().toURI().toURL());
-            final URIish remotePushURI = new URIish(repoVO.get().getHttpUrl());
+            final URIish remotePushURI = new URIish(repoVO.getHttpUrl());
             remoteConfig.addURI(uri);
             remoteConfig.addPushURI(remotePushURI);
             remoteConfig.update(config);
-            config.save();
             config.save();
 
             //Add files to index
@@ -195,7 +196,63 @@ public class GitHubRepoService {
 
     }
 
-    private Optional<RepoVO> buildAndReturnRepoVO(GHRepository ghRepository) {
+    /**
+     * @param factoryJson
+     * @param repoName
+     * @param repoVO
+     * @throws IOException
+     * @throws GitAPIException
+     */
+    public void addFactoryJsonIfMissing(String factoryJson, String repoName, RepoVO repoVO) throws IOException, GitAPIException {
+
+        Path repoDir = Files.createTempDirectory(repoName);
+
+        String REMOTE_URL = repoVO.getHttpUrl();
+
+        try (Git git = Git.cloneRepository()
+            .setURI(REMOTE_URL)
+            .setDirectory(repoDir.toFile())
+            .call()) {
+
+            log.trace("Repo location : " + git.getRepository().getDirectory());
+
+            Repository repository = git.getRepository();
+
+            Optional<Path> factoryJsonExist = Files.list(Paths.get(repository.getDirectory().getParent()))
+                .filter(path -> path.endsWith(".factory.json"))
+                .findFirst();
+
+            if (factoryJsonExist.isPresent()) {
+                log.info("Factory JSON present in repo '{}' nothing todo", repoVO.getHttpUrl());
+            } else {
+                log.info("Factory JSON not present in repo '{}' will add and push", repoVO.getHttpUrl());
+                File jsonFile =
+                    new File(repository.getDirectory().getParent(), ".factory.json");
+
+                jsonFile.createNewFile();
+                Files.write(Paths.get(jsonFile.toURI()), factoryJson.getBytes());
+
+                git.add().addFilepattern(".factory.json").call();
+
+                git.commit()
+                    .setMessage("Added Che factory config file")
+                    .call();
+
+                git.push()
+                    .setCredentialsProvider(new UsernamePasswordCredentialsProvider(githubUserId, githubUserToken))
+                    .call();
+            }
+
+        }
+
+    }
+
+    /**
+     * @param ghRepository
+     * @param isCreated
+     * @return
+     */
+    private Optional<RepoVO> buildAndReturnRepoVO(GHRepository ghRepository, boolean isCreated) {
         if (ghRepository != null) {
             return Optional.of(RepoVO.builder()
                 .name(ghRepository.getName())
@@ -204,6 +261,7 @@ public class GitHubRepoService {
                 .url(ghRepository.getGitTransportUrl())
                 .sshUrl(ghRepository.getSshUrl())
                 .fqdn(ghRepository.getFullName())
+                .created(isCreated)
                 .build());
         } else {
             return Optional.empty();

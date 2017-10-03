@@ -28,4 +28,5 @@ public class RepoVO {
     String sshUrl;
     String description;
     String fqdn;
+    boolean created;
 }

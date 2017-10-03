@@ -107,7 +107,9 @@ public class GitHubRepoServiceIT {
 
         assertThat(fileContent).isEqualToIgnoringWhitespace("Hello World!!!");
 
-        gitHubRepoService.pushContentToOrigin("demoadd", gitRepoFolder.getRoot());
+        Optional<RepoVO> repoVO = gitHubRepoService.createRepo("demoadd","Test repo created");
+
+        gitHubRepoService.pushContentToOrigin("demoadd", gitRepoFolder.getRoot(),repoVO.get());
 
         //Clean up
         gitHubRepoService.deleteRepo("demoadd");

@@ -1,12 +1,12 @@
 /**
  * Copyright (c) 2017 Red Hat, Inc.
- *
+ * <p>
  * Red Hat licenses this file to you under the Apache License, version
  * 2.0 (the "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
@@ -96,66 +96,65 @@ public class CheProjectController {
     public ModelAndView springbootCheProject(BasicProjectRequest request, ModelAndView modelAndView) {
         try {
 
-            log.info("Creating Project with Che-Starter");
-
-            Map<String, String> projectContext = new HashMap<>();
-
             final String projectDescription = request.getDescription();
             final String projectArtifactId = request.getArtifactId();
             final String projectGroupId = request.getGroupId();
             final String projectName = request.getName();
             final String projectPackaging = request.getPackaging();
 
-            Optional<RepoVO> optRepoVo = gitHubRepoService.createRepo(projectArtifactId, projectDescription);
-
-            //FIXME if repo exists already then just return URL with existing repo
+            String repoName = StringUtils.replace(projectArtifactId, " ", "_");
+            Optional<RepoVO> optRepoVo = gitHubRepoService.createRepo(repoName, projectDescription);
 
             if (optRepoVo.isPresent()) {
 
+                RepoVO githubRepo = optRepoVo.get();
+
+                final Map<String, String> projectContext = new HashMap<>();
                 projectContext.put("artifactId", projectArtifactId);
                 projectContext.put("description", projectDescription);
-                projectContext.put("githubRepoUrl", optRepoVo.get().getHttpUrl());
+                projectContext.put("githubRepoUrl", githubRepo.getHttpUrl());
                 projectContext.put("dockerImage", DEFAULT_SPRING_BOOT_CHE_IMAGE);
 
-                //Step-2 Generate Project as zip with Che .factory.json
                 String factoryJson = templateService.buildFactoryJsonFromTemplate(projectContext);
 
-                log.trace("factoryJson:{}", factoryJson);
+                //Only Created repos need code push, existing repositories does not need it
+                if (githubRepo.isCreated()) {
 
-                ProjectRequest projectRequest = (ProjectRequest) request;
+                    ProjectRequest projectRequest = (ProjectRequest) request;
 
-                File projectDir = projectGenerator.generateProjectStructure(projectRequest);
+                    File projectDir = projectGenerator.generateProjectStructure(projectRequest);
 
-                log.trace("Project created at : {}", projectDir);
+                    log.trace("Project created at : {}", projectDir);
 
-                String wrapperScript = request.getBaseDir() != null
-                    ? request.getBaseDir() + "/mvnw" : "mvnw";
-                new File(projectDir, wrapperScript).setExecutable(true);
+                    String wrapperScript = request.getBaseDir() != null
+                        ? request.getBaseDir() + "/mvnw" : "mvnw";
+                    new File(projectDir, wrapperScript).setExecutable(true);
 
 
-                String factoryJsonFile = request.getBaseDir() != null
-                    ? request.getBaseDir() + "/.factory.json" : ".factory.json";
+                    String factoryJsonFile = request.getBaseDir() != null
+                        ? request.getBaseDir() + "/.factory.json" : ".factory.json";
 
-                //Write Che Factory Json File
-                Files.write(Paths.get(projectDir.getAbsolutePath(), factoryJsonFile), factoryJson.getBytes());
+                    //Write Che Factory Json File
+                    Files.write(Paths.get(projectDir.getAbsolutePath(), factoryJsonFile), factoryJson.getBytes());
 
-                // Step-2  Push the contents to GitHub
-                String repoName = StringUtils.replace(projectArtifactId, " ", "_");
-                Optional<RepoVO> gitHubRepo = gitHubRepoService.createRepo(repoName, projectDescription);
-
-                if (gitHubRepo.isPresent()) {
-
-                    gitHubRepoService.pushContentToOrigin(gitHubRepo.get().getName(),
+                    gitHubRepoService.pushContentToOrigin(githubRepo.getName(),
                         Paths.get(projectDir.getAbsolutePath(),
-                            request.getBaseDir() != null ? request.getBaseDir() : "/").toFile());
+                            request.getBaseDir() != null ? request.getBaseDir() : "/").toFile(), githubRepo);
 
-                    CheSpringBootProjectVO response = buildResponse(gitHubRepo.get(), projectArtifactId, projectGroupId,
-                        projectName, projectPackaging);
-
-                    modelAndView.getModel().put("projectInfo", response);
-
+                } else { //add .factory.json to repos that might not have it
+                    gitHubRepoService.addFactoryJsonIfMissing(factoryJson, repoName, githubRepo);
                 }
 
+                if (githubRepo.isCreated()) {
+                    log.info("Auto Redirect will happen");
+                } else {
+                    log.info("Auto Redirect not happen, link will be provided");
+                }
+
+                CheSpringBootProjectVO response = buildResponse(githubRepo, projectArtifactId, projectGroupId,
+                    projectName, projectPackaging);
+
+                modelAndView.getModel().put("projectInfo", response);
                 modelAndView.setViewName("ok");
 
             } else {
