@@ -191,6 +191,7 @@ public class CheProjectController {
             .groupId(groupId)
             .name(name)
             .packaging(packaging)
+            .created(repoVO.isCreated())
             .workspaceUrl(workspaceUrl).build();
 
         return cheSpringBootProjectVO;
