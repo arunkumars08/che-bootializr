@@ -1,12 +1,12 @@
 /**
  * Copyright (c) 2017 Red Hat, Inc.
- *
+ * <p>
  * Red Hat licenses this file to you under the Apache License, version
  * 2.0 (the "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
@@ -15,15 +15,21 @@
  */
 package com.redhat.developers;
 
+import io.openshift.booster.catalog.BoosterCatalogService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.scheduling.annotation.EnableAsync;
+
+import java.util.concurrent.ExecutionException;
 
 @SpringBootApplication
 @EnableAsync
+@Slf4j
 public class CheBootializrApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(CheBootializrApplication.class, args);
-	}
+    public static void main(String[] args) {
+        SpringApplication.run(CheBootializrApplication.class, args);
+    }
 }

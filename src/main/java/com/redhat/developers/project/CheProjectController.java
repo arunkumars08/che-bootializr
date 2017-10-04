@@ -20,7 +20,12 @@ import com.redhat.developers.service.GitHubRepoService;
 import com.redhat.developers.service.TemplateService;
 import com.redhat.developers.utils.GeneralUtil;
 import com.redhat.developers.vo.CheSpringBootProjectVO;
+import com.redhat.developers.vo.ProjectMissionVO;
 import com.redhat.developers.vo.RepoVO;
+import io.openshift.booster.catalog.Booster;
+import io.openshift.booster.catalog.BoosterCatalogService;
+import io.openshift.booster.catalog.Mission;
+import io.openshift.booster.catalog.Runtime;
 import io.spring.initializr.generator.BasicProjectRequest;
 import io.spring.initializr.generator.ProjectGenerator;
 import io.spring.initializr.generator.ProjectRequest;
@@ -29,19 +34,32 @@ import io.spring.initializr.metadata.InitializrMetadata;
 import io.spring.initializr.metadata.InitializrMetadataProvider;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.maven.model.Dependency;
+import org.apache.maven.model.DependencyManagement;
+import org.apache.maven.model.Model;
+import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
+import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
+import org.apache.tools.ant.Project;
+import org.apache.tools.ant.taskdefs.Zip;
+import org.apache.tools.ant.types.ZipFileSet;
+import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.springframework.beans.BeanWrapperImpl;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.annotation.PostConstruct;
 import java.beans.PropertyDescriptor;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
+import java.net.URLEncoder;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.concurrent.ExecutionException;
 
 @Controller
 @Slf4j
@@ -56,19 +74,33 @@ public class CheProjectController {
     private final GitHubRepoService gitHubRepoService;
     private final InitializrMetadataProvider metadataProvider;
     private final DependencyMetadataProvider dependencyMetadataProvider;
+    private final BoosterCatalogService boosterCatalogService;
     private final CheBootalizrProperties cheBootalizrProperties;
 
     public CheProjectController(InitializrMetadataProvider metadataProvider,
                                 DependencyMetadataProvider dependencyMetadataProvider,
                                 ProjectGenerator projectGenerator, TemplateService templateService,
-                                GitHubRepoService gitHubRepoService, CheBootalizrProperties cheBootalizrProperties) {
+                                GitHubRepoService gitHubRepoService,
+                                CheBootalizrProperties cheBootalizrProperties,
+                                BoosterCatalogService boosterCatalogService) {
         this.projectGenerator = projectGenerator;
         this.templateService = templateService;
         this.gitHubRepoService = gitHubRepoService;
         this.metadataProvider = metadataProvider;
         this.dependencyMetadataProvider = dependencyMetadataProvider;
         this.cheBootalizrProperties = cheBootalizrProperties;
+        this.boosterCatalogService = boosterCatalogService;
+    }
 
+    @PostConstruct
+    public void init() {
+        try {
+            boosterCatalogService.index().get();
+        } catch (InterruptedException e) {
+            log.error("Error loading missions:", e);
+        } catch (ExecutionException e) {
+            log.error("Error loading missions:", e);
+        }
     }
 
     @ModelAttribute
@@ -79,10 +111,30 @@ public class CheProjectController {
         return projectRequest;
     }
 
+    @ModelAttribute("projectMissions")
+    public List<ProjectMissionVO> projectMissions() {
+        List<ProjectMissionVO> projectMissions = new LinkedList<>();
+        Set<Mission> missions = boosterCatalogService.getMissions();
+        log.info("Total Missions:{}", missions.size());
+        missions.forEach(mission -> {
+            ProjectMissionVO missionVO = new ProjectMissionVO();
+            missionVO.setMission(mission);
+            Optional<Booster> optBooster = boosterCatalogService.getBooster(mission, new Runtime("spring-boot"));
+            if (optBooster.isPresent()) {
+                Booster booster = optBooster.get();
+                log.trace("Adding Booster :" + booster.getName());
+                missionVO.setBooster(optBooster.get());
+                missionVO.setBoosterDescription(
+                    GeneralUtil.descriptionToString(booster.getDescription()));
+            }
+            projectMissions.add(missionVO);
+        });
+        return projectMissions;
+    }
+
     @GetMapping("/")
     public String home(Map<String, Object> model) {
         InitializrMetadata metadata = metadataProvider.get();
-
         BeanWrapperImpl beanWrapper = new BeanWrapperImpl(metadata);
         for (PropertyDescriptor descriptor : beanWrapper.getPropertyDescriptors()) {
             model.put(descriptor.getName(), beanWrapper.getPropertyValue(descriptor.getName()));
@@ -91,6 +143,152 @@ public class CheProjectController {
         return "home";
     }
 
+    @RequestMapping(value = "/dummy")
+    @ResponseBody
+    public ResponseEntity<byte[]> dummy(BasicProjectRequest request, String projectMission) {
+
+        log.info("DUMMY PROCESSOR: Project Req:{} with Project Mission: {}", request.getArtifactId(),
+            projectMission);
+
+        String[] temp = projectMission.split("~");
+        String missionId = temp[0];
+        String boosterId = temp[1];
+
+        Optional<Booster> optional = boosterCatalogService.getBoosters().stream()
+            .filter(b -> b.getId().equals(boosterId))
+            .findFirst();
+
+        if (optional.isPresent()) {
+
+            Booster booster = optional.get();
+
+            ProjectRequest projectRequest = (ProjectRequest) request;
+
+            byte[] springPomBytes = projectGenerator.generateMavenPom(projectRequest);
+
+            String springPom = new String(springPomBytes);
+
+            Path projectDir;
+
+            try {
+
+                projectDir = Files.createTempDirectory("tmpchebootializr");
+                log.info("Project temp directory :{}", projectDir.toFile().getAbsolutePath());
+                Files.deleteIfExists(projectDir);
+                projectDir.toFile().mkdirs();
+
+                Path projectRootDir;
+
+                if (request.getBaseDir() != null) {
+                    projectRootDir = Files.createDirectories(Paths.get(projectDir.toFile().getAbsolutePath(), request.getBaseDir()));
+                } else {
+                    projectRootDir = projectDir;
+                }
+
+                boosterCatalogService.copy(booster, projectRootDir);
+
+                log.info("Booster copied to  Dir: {}", projectRootDir);
+
+                MavenXpp3Reader mavenXpp3Reader = new MavenXpp3Reader();
+                Model springInitalizrPomModel = mavenXpp3Reader.read(new StringReader(springPom));
+
+                File boosterPomFile = Paths.get(projectRootDir.toFile().getAbsolutePath(),
+                    "pom.xml").toFile();
+
+                Model boosterPomModel = mavenXpp3Reader.read(new FileReader(boosterPomFile));
+
+                mergeModel(springInitalizrPomModel, boosterPomModel);
+
+                //Write back the pom
+                MavenXpp3Writer mavenXpp3Writer = new MavenXpp3Writer();
+
+                Files.delete(Paths.get(boosterPomFile.getAbsolutePath()));
+
+
+                mavenXpp3Writer.write(new FileWriter(boosterPomFile),
+                    boosterPomModel);
+
+                File downloadFile = projectGenerator.createDistributionFile(projectDir.toFile(), ".zip");
+
+                Zip zip = new Zip();
+                zip.setProject(new Project());
+                zip.setDefaultexcludes(false);
+                ZipFileSet set = new ZipFileSet();
+                set.setDir(projectDir.toFile());
+                set.setIncludes("**,");
+                set.setDefaultexcludes(false);
+                zip.addFileset(set);
+                zip.setDestFile(downloadFile.getCanonicalFile());
+                zip.execute();
+
+                //send Response Entity
+                byte[] bytes = StreamUtils.copyToByteArray(new FileInputStream(downloadFile));
+                String contentDispositionValue = "attachment; filename=\"" + sanitzedUrlFileName(projectRequest, "zip") + "\"";
+
+                return ResponseEntity.ok().header("Content-Type", "application/zip")
+                    .header("Content-Disposition", contentDispositionValue).body(bytes);
+
+            } catch (IOException e) {
+                log.error("Error creating project ", e);
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(e.getMessage().getBytes());
+            } catch (XmlPullParserException e) {
+
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(e.getMessage().getBytes());
+            }
+        } else {
+            return ResponseEntity.status(HttpStatus.NO_CONTENT)
+                .body(new byte[0]);
+        }
+    }
+
+    private void mergeModel(Model springInitalizrPomModel, Model boosterPomModel) {
+
+        log.info("Merging Booster POM with Spring Intializr Pom");
+
+        //GAV
+        boosterPomModel.setGroupId(springInitalizrPomModel.getGroupId());
+        boosterPomModel.setArtifactId(springInitalizrPomModel.getArtifactId());
+        boosterPomModel.setVersion(springInitalizrPomModel.getVersion());
+
+        if (!"demo".equalsIgnoreCase(springInitalizrPomModel.getName())) {
+            boosterPomModel.setName(springInitalizrPomModel.getName());
+        }
+        if (!"Demo project for Spring Boot".equalsIgnoreCase(springInitalizrPomModel.getName())) {
+            boosterPomModel.setDescription(springInitalizrPomModel.getName());
+        }
+
+        boosterPomModel.setVersion(springInitalizrPomModel.getDescription());
+
+        //Properties
+        Properties boosterPomProps = boosterPomModel.getProperties();
+
+        springInitalizrPomModel.getProperties().forEach((key, value) -> {
+            boosterPomProps.putIfAbsent(key, value);
+        });
+
+        //Dependency Management
+        DependencyManagement dependencyManagement = springInitalizrPomModel.getDependencyManagement();
+
+        if (dependencyManagement != null) {
+            DependencyManagement boosterDepMgmt = boosterPomModel.getDependencyManagement();
+            if (dependencyManagement.getDependencies() != null) {
+                dependencyManagement.getDependencies().forEach(dependency ->
+                    boosterDepMgmt.getDependencies().add(dependency));
+            }
+        }
+
+        //Dependencies
+        List<Dependency> springDeps = springInitalizrPomModel.getDependencies();
+        List<Dependency> boosterDeps = boosterPomModel.getDependencies();
+
+        if ((boosterDeps != null && !!boosterDeps.isEmpty()) &&
+            (springDeps != null && !!springDeps.isEmpty())) {
+            boosterDeps.addAll(boosterDeps);
+        }
+
+    }
 
     @RequestMapping(value = "/cheproject")
     public ModelAndView springbootCheProject(BasicProjectRequest request, ModelAndView modelAndView) {
@@ -197,5 +395,14 @@ public class CheProjectController {
         return cheSpringBootProjectVO;
     }
 
+
+    private static String sanitzedUrlFileName(ProjectRequest request, String extension) {
+        String tmp = request.getArtifactId().replaceAll(" ", "_");
+        try {
+            return URLEncoder.encode(tmp, "UTF-8") + "." + extension;
+        } catch (UnsupportedEncodingException e) {
+            throw new IllegalStateException("Cannot encode URL", e);
+        }
+    }
 
 }

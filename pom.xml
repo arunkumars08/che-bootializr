@@ -36,6 +36,9 @@
     <bootstrap.version>3.3.7-1</bootstrap.version>
     <org.eclipse.jgit.version>4.8.0.201706111038-r</org.eclipse.jgit.version>
     <initializr-generator.version>0.5.0.BUILD-SNAPSHOT</initializr-generator.version>
+    <booster-catalog-service.version>12</booster-catalog-service.version>
+    <catalog.repository>https://github.com/openshiftio/booster-catalog</catalog.repository>
+    <catalog.repository.ref>next</catalog.repository.ref>
   </properties>
 
   <dependencyManagement>
@@ -104,6 +107,32 @@
       <groupId>com.squareup.okhttp3</groupId>
       <artifactId>okhttp</artifactId>
       <version>${okhttp.version}</version>
+    </dependency>
+
+    <!-- Openshiftio Boosters-->
+
+    <dependency>
+      <groupId>io.openshift</groupId>
+      <artifactId>booster-catalog-service</artifactId>
+      <version>${booster-catalog-service.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.asciidoctor</groupId>
+      <artifactId>asciidoctorj</artifactId>
+      <version>1.5.4</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.ant</groupId>
+      <artifactId>ant</artifactId>
+      <version>1.9.4</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.maven</groupId>
+      <artifactId>maven-model</artifactId>
+      <version>3.3.9</version>
     </dependency>
 
     <!-- Spring Cloud -->
@@ -205,6 +234,7 @@
 
   <build>
 
+
     <pluginManagement>
       <plugins>
         <plugin>
@@ -237,6 +267,7 @@
           <delimiters>@</delimiters>
         </configuration>
       </plugin>
+
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
@@ -246,6 +277,31 @@
             <goals>
               <goal>repackage</goal>
             </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>1.6.0</version>
+        <executions>
+          <execution>
+            <id>create-catalog</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>java</goal>
+            </goals>
+            <configuration>
+              <mainClass>io.openshift.booster.BoosterIndexer</mainClass>
+              <arguments>
+                <argument>${catalog.repository}</argument>
+                <argument>${catalog.repository.ref}</argument>
+                <argument>${project.build.directory}/booster-catalog-${catalog.repository.ref}</argument>
+                <argument>${project.build.outputDirectory}/booster-catalog-${catalog.repository.ref}.zip</argument>
+              </arguments>
+            </configuration>
           </execution>
         </executions>
       </plugin>
