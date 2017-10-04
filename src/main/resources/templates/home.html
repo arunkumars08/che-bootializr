@@ -9,7 +9,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
-<form id="projectForm" action="/dummy" method="get" role="form">
+<form id="projectForm" action="/{{defaultAction}}" method="get" role="form" target="_blank">
     <div class="container-fluid">
         <div class="row app-header">
             <div class="container">
@@ -46,11 +46,11 @@
             <div class="row">
                 <h3>Missions</h3>
                 {{#projectMissions}}
-                <div class="form-group col-sm-6">
+                <div id="projectMissions" class="form-group col-sm-6">
                     <div class="checkbox">
                         <label>
                             {{#mission}}
-                            <input type="radio" id="{{id}}" name="projectMission" value="{{id}}~{{#booster}}{{id}}{{/booster}}"><strong>{{name}}</strong>
+                            <input type="checkbox" id="{{id}}" name="projectMission" value="{{id}}~{{#booster}}{{id}}{{/booster}}"><strong>{{name}}</strong>
                             {{/mission}}
                             <p class="help-block">{{#boosterDescription}}{{& .}}{{/boosterDescription}}</p>
                         </label>

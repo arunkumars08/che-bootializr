@@ -33,7 +33,7 @@ $(function () {
             return item.id;
         },
         sorter: function (left, right) {
-            return right.weight - left.weight ;
+            return right.weight - left.weight;
         },
         cache: false,
         limit: 5
@@ -87,6 +87,10 @@ $(function () {
         } else {
             removeTag(value);
         }
+    });
+
+    $("#projectMissions input").bind("change", function () {
+        $('#projectMissions input').not(this).prop('checked', false);
     });
 
 

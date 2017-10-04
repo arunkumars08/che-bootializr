@@ -27,7 +27,9 @@ import io.spring.initializr.generator.ProjectRequestResolver;
 import io.spring.initializr.generator.ProjectResourceLocator;
 import io.spring.initializr.metadata.*;
 import io.spring.initializr.util.TemplateRenderer;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.text.StrSubstitutor;
+import org.asciidoctor.Asciidoctor;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
@@ -41,9 +43,11 @@ import org.springframework.core.env.Environment;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 @Configuration
 @EnableConfigurationProperties(value = {InitializrProperties.class, CheBootalizrProperties.class})
+@Slf4j
 public class CheBootializrConfiguration {
 
     private final List<ProjectRequestPostProcessor> postProcessors;
@@ -100,9 +104,18 @@ public class CheBootializrConfiguration {
 
     @Bean
     public BoosterCatalogService boosterCatalogService(CheBootalizrProperties cheBootalizrProperties) {
-        return new BoosterCatalogService.Builder()
+
+        BoosterCatalogService boosterCatalogService = new BoosterCatalogService.Builder()
             .catalogRef(cheBootalizrProperties.getBoosterCatalog().getCatalogRef())
             .catalogRepository(cheBootalizrProperties.getBoosterCatalog().getCatalogRepository())
             .build();
+        boosterCatalogService.index();
+
+        return boosterCatalogService;
+    }
+
+    @Bean
+    public Asciidoctor asciidoctor() {
+        return Asciidoctor.Factory.create();
     }
 }
