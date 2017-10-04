@@ -1,12 +1,12 @@
 /**
  * Copyright (c) 2017 Red Hat, Inc.
- *
+ * <p>
  * Red Hat licenses this file to you under the Apache License, version
  * 2.0 (the "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
@@ -50,6 +50,16 @@ public class CheBootializrApplicationTests {
         assertThat(cheBootalizrProperties.getChe()).isNotNull();
         assertThat(cheBootalizrProperties.getChe().getServiceUrl()).isNotNull();
         assertThat(cheBootalizrProperties.getChe().getServiceUrl()).isEqualTo("http://che.example.com");
+    }
+
+
+    @Test
+    public void test_booster_properties_are_loaded() {
+        assertThat(cheBootalizrProperties).isNotNull();
+        assertThat(cheBootalizrProperties.getBoosterCatalog()).isNotNull();
+        assertThat(cheBootalizrProperties.getBoosterCatalog().getCatalogRef()).isNotNull();
+        assertThat(cheBootalizrProperties.getBoosterCatalog().getCatalogRef()).isEqualTo("master");
+        assertThat(cheBootalizrProperties.getBoosterCatalog().getCatalogRepository()).isEqualTo("https://github.com/kameshsampath/booster-catalog.git");
     }
 
     @Test

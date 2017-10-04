@@ -861,3 +861,6 @@ chebootializr:
     fileName: ~/.github
   che:
     service-url: http://che-eclipse-che.192.168.64.8.nip.io
+  booster-catalog:
+    catalogRef: next
+    catalogRepository: https://github.com/openshiftio/booster-catalog.git

@@ -1,3 +1,6 @@
 chebootializr:
   che:
     url: http://che.example.com
+  booster-catalog:
+    catalogRef: master
+    catalogRepository: https://github.com/kameshsampath/booster-catalog.git

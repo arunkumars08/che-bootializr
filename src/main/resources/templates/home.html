@@ -21,34 +21,45 @@
 
         <!-- Start Project Content -->
         <div class="container start-main">
-            <!-- Select Project, language , type and boot version-->
-            <div class="row form-inline text-center">
-                <div class="form-group">
-                    <h3>
-                        <span class="project-info">
-                            <label id="lblType" for="type">Generate a</label>
-                            <select id="type" class="form-control" name="type" tabindex="1">
-                                {{#types.content}}
-                                <option data-action="{{action}}" value="{{id}}" {{#default}}selected{{/default}}>{{name}}</option>
-                                {{/types.content}}
-                            </select>
-                            <label id="lblLanguage" for="language">With</label>
-                            <select id="language" class="form-control" name="language" tabindex="2">
-                                {{#languages.content}}
-                                <option value="{{id}}" {{#default}}selected{{/default}}>{{name}}</option>
-                                {{/languages.content}}
-                            </select>
-                            <label id="lblBootVersion" for="bootVersion">Version</label>
-                            <select id="bootVersion" class="form-control" name="bootVersion" tabindex="2">
-                                {{#bootVersions.content}}
-                                <option value="{{id}}" {{#default}}selected{{/default}}>{{name}}</option>
-                                {{/bootVersions.content}}
-                            </select>
-                        </span>
-                    </h3>
-                </div>
-            </div>
             <input id="baseDir" name="baseDir" type="hidden" value="{{artifactId.content}}">
+            <!-- Project Type :: Defaults to maven -->
+            {{#types.content}}
+            {{#default}}
+            <input id="type" name="type" type="hidden" value="{{id}}"/>
+            {{/default}}
+            {{/types.content}}
+
+            <!-- Project Language :: Defaults to Java -->
+            {{#languages.content}}
+            {{#default}}
+            <input id="language" name="language" type="hidden" value="{{id}}"/>
+            {{/default}}
+            {{/languages.content}}
+
+            <!-- Project Language :: Defaults to 1.5.7 -->
+            {{#bootVersions.content}}
+            {{#default}}
+            <input id="bootVersion" name="bootVersion" type="hidden" value="{{id}}"/>
+            {{/default}}
+            {{/bootVersions.content}}
+
+            <div class="row">
+                <h3>Missions</h3>
+                {{#projectMissions}}
+                <div id="projectMissions" class="form-group col-sm-6">
+                    <div class="checkbox">
+                        <label>
+                            {{#mission}}
+                            <input type="checkbox" id="{{id}}" name="projectMission" value="{{id}}~{{#booster}}{{id}}{{/booster}}"><strong>{{name}}</strong>
+                            {{/mission}}
+                            <p class="help-block">{{#boosterDescription}}{{& .}}{{/boosterDescription}}</p>
+                        </label>
+                    </div>
+
+                </div>
+                {{/projectMissions}}
+            </div>
+
             <!-- Start Basic Row-->
             <div class="row">
                 <div class="col-sm-12 col-md-6">

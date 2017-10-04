@@ -1,6 +1,6 @@
 = CheBootializr
 
-It has not been so easy to get your cloud devlopment environment so quickly with https://projects.spring.io/spring-boot/[Spring Boot]
+It has never been easy to get your cloud devlopment environment so quickly with https://projects.spring.io/spring-boot/[Spring Boot]
 and https://www.eclipse.org[Eclipse Che]
 
 
@@ -24,7 +24,7 @@ clone, build and install locally.
 
 [source,sh]
 ----
-git clone git@github.com:spring-io/initializr.git <1>
+git clone https://github.com/spring-io/initializr.git <1>
 cd initializr
 ./mvnw clean install <2>
 ----
@@ -91,6 +91,6 @@ on to the OpenShift cluster.
 
 [source,sh]
 ----
-./mvnw clean fabric8:deploy
+./mvnw -DskipTests clean fabric8:deploy
 ----
 
