@@ -1,4 +1,44 @@
+var projectBoosterTpl = "<div id=\"projectBooster\" class=\"form-group col-sm-6\"><div class=\"checkbox\"><label> " +
+    "<input type=\"checkbox\" id=\"{{id}}\" name=\"projectBooster\" value=\"{{id}}\">" +
+    "&nbsp;&nbsp;<strong>{{name}}</strong>" +
+    "<p class=\"help-block\">{{#description}}{{& .}}{{/description}}</p></label></div></div>";
+
+
 $(function () {
+
+    var ws = null;
+
+    var wsConnect = function () {
+        ws = new WebSocket('ws://localhost:8080/boosters');
+        ws.onmessage = function (event) {
+            console.log("Data"+event)
+            console.log("Data Body"+event.data)
+            var boosterJson = JSON.parse(event.data);
+            displayBooster(boosterJson);
+        };
+
+        ws.onopen = function (event) {
+            ws.send("");
+        };
+
+    };
+
+    var wsDisconnect = function () {
+        if (ws != null) {
+            ws.close();
+        }
+        console.log("Disconnected");
+    };
+
+    var displayBooster = function (boosterJson) {
+        if (boosterJson) {
+            $('#noCatalog').hide();
+            var html = Mustache.to_html(projectBoosterTpl, boosterJson);
+            $('#catalogs').append(html);
+        }
+    };
+
+    wsConnect();
 
     var addTag = function (id, name) {
         if ($("#depsTags div[data-id='" + id + "']").length == 0) {

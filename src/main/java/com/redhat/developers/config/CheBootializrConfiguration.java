@@ -109,7 +109,6 @@ public class CheBootializrConfiguration {
             .catalogRef(cheBootalizrProperties.getBoosterCatalog().getCatalogRef())
             .catalogRepository(cheBootalizrProperties.getBoosterCatalog().getCatalogRepository())
             .build();
-        boosterCatalogService.index();
 
         return boosterCatalogService;
     }

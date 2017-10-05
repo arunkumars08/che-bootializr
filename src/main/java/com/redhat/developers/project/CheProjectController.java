@@ -20,12 +20,9 @@ import com.redhat.developers.service.GitHubRepoService;
 import com.redhat.developers.service.TemplateService;
 import com.redhat.developers.utils.GeneralUtil;
 import com.redhat.developers.vo.CheSpringBootProjectVO;
-import com.redhat.developers.vo.ProjectMissionVO;
 import com.redhat.developers.vo.RepoVO;
 import io.openshift.booster.catalog.Booster;
 import io.openshift.booster.catalog.BoosterCatalogService;
-import io.openshift.booster.catalog.Mission;
-import io.openshift.booster.catalog.Runtime;
 import io.spring.initializr.generator.BasicProjectRequest;
 import io.spring.initializr.generator.ProjectGenerator;
 import io.spring.initializr.generator.ProjectRequest;
@@ -103,26 +100,27 @@ public class CheProjectController {
         return projectRequest;
     }
 
-    @ModelAttribute("projectMissions")
-    public List<ProjectMissionVO> projectMissions() {
-        List<ProjectMissionVO> projectMissions = new LinkedList<>();
-        Set<Mission> missions = boosterCatalogService.getMissions();
-        log.info("Total Missions:{}", missions.size());
-        missions.forEach(mission -> {
-            ProjectMissionVO missionVO = new ProjectMissionVO();
-            missionVO.setMission(mission);
-            Optional<Booster> optBooster = boosterCatalogService.getBooster(mission, new Runtime("spring-boot"));
-            if (optBooster.isPresent()) {
-                Booster booster = optBooster.get();
-                log.trace("Adding Booster :" + booster.getName());
-                missionVO.setBooster(optBooster.get());
-                missionVO.setBoosterDescription(
-                    GeneralUtil.descriptionToString(asciidoctor, booster.getDescription()));
-            }
-            projectMissions.add(missionVO);
-        });
-        return projectMissions;
-    }
+    // TODO - remove it
+//    @ModelAttribute("projectMissions")
+//    public List<ProjectMissionVO> projectMissions() {
+//        List<ProjectMissionVO> projectMissions = new LinkedList<>();
+//        Set<Mission> missions = boosterCatalogService.getMissions();
+//        log.info("Total Missions:{}", missions.size());
+//        missions.forEach(mission -> {
+//            ProjectMissionVO missionVO = new ProjectMissionVO();
+//            missionVO.setMission(mission);
+//            Optional<Booster> optBooster = boosterCatalogService.getBooster(mission, new Runtime("spring-boot"));
+//            if (optBooster.isPresent()) {
+//                Booster booster = optBooster.get();
+//                log.trace("Adding Booster :" + booster.getName());
+//                missionVO.setBooster(optBooster.get());
+//                missionVO.setBoosterDescription(
+//                    GeneralUtil.descriptionToString(asciidoctor, booster.getDescription()));
+//            }
+//            projectMissions.add(missionVO);
+//        });
+//        return projectMissions;
+//    }
 
     @GetMapping("/")
     public String home(Map<String, Object> model) {
@@ -137,17 +135,17 @@ public class CheProjectController {
 
     /**
      * @param request
-     * @param projectMission
+     * @param projectBooster
      * @return
      */
     @RequestMapping(value = "/cheproject.zip")
     @ResponseBody
-    public ResponseEntity<byte[]> cheprojectAsZip(BasicProjectRequest request, String projectMission) {
+    public ResponseEntity<byte[]> cheprojectAsZip(BasicProjectRequest request, String projectBooster) {
 
         try {
 
             ProjectRequest projectRequest = (ProjectRequest) request;
-            Path projectDir = makeProject(request, projectMission);
+            Path projectDir = makeProject(request, projectBooster);
 
             File downloadFile = projectGenerator.createDistributionFile(projectDir.toFile(), ".zip");
 
@@ -171,7 +169,7 @@ public class CheProjectController {
      * @return
      */
     @RequestMapping(value = "/cheproject")
-    public ModelAndView springbootCheProject(BasicProjectRequest request, String projectMission,
+    public ModelAndView springbootCheProject(BasicProjectRequest request, String projectBooster,
                                              ModelAndView modelAndView) {
         try {
 
@@ -199,7 +197,7 @@ public class CheProjectController {
                 //Only Created repos need code push, existing repositories does not need it
                 if (githubRepo.isCreated()) {
 
-                    Path projectDir = makeProject(request, projectMission);
+                    Path projectDir = makeProject(request, projectBooster);
                     File fProjectDir = projectDir.toFile();
 
                     log.trace("Project created at : {}", projectDir);
@@ -238,17 +236,14 @@ public class CheProjectController {
 
     /**
      * @param request
-     * @param projectMission
+     * @param boosterId
      * @return
      * @throws IOException
      * @throws XmlPullParserException
      */
 
-    protected Path makeProject(BasicProjectRequest request, String projectMission)
+    protected Path makeProject(BasicProjectRequest request, String boosterId)
         throws IOException, XmlPullParserException {
-
-        String[] temp = projectMission.split("~");
-        String boosterId = temp[1];
 
         Optional<Booster> optional = boosterCatalogService.getBoosters().stream()
             .filter(b -> b.getId().equals(boosterId))
@@ -280,20 +275,30 @@ public class CheProjectController {
                 log.info("Booster copied to  Dir: {}", projectRootDir);
 
                 MavenXpp3Reader mavenXpp3Reader = new MavenXpp3Reader();
-                Model springInitalizrPomModel = mavenXpp3Reader.read(new StringReader(springPom));
+
+                Model springInitalizrPomModel;
+
+                try (StringReader stringPomReader = new StringReader(springPom)) {
+                    springInitalizrPomModel = mavenXpp3Reader.read(stringPomReader);
+                }
 
                 File boosterPomFile = Paths.get(projectRootDir.toFile().getAbsolutePath(),
                     "pom.xml").toFile();
 
-                Model boosterPomModel = mavenXpp3Reader.read(new FileReader(boosterPomFile));
+                Model boosterPomModel;
+                try (FileReader pomReader = new FileReader(boosterPomFile)) {
+                    boosterPomModel = mavenXpp3Reader.read(pomReader);
+                }
 
                 mergeModel(springInitalizrPomModel, boosterPomModel);
 
                 //Write back the pom
                 MavenXpp3Writer mavenXpp3Writer = new MavenXpp3Writer();
                 Files.delete(Paths.get(boosterPomFile.getAbsolutePath()));
-                mavenXpp3Writer.write(new FileWriter(boosterPomFile),
-                    boosterPomModel);
+                try (FileWriter pomWriter = new FileWriter(boosterPomFile)) {
+                    mavenXpp3Writer.write(pomWriter, boosterPomModel);
+                }
+
 
                 return projectRootDir;
 

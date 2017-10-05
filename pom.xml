@@ -31,14 +31,18 @@
     <kubernetes-client.version>2.6.3</kubernetes-client.version>
     <openshift-client.version>2.6.3</openshift-client.version>
     <arquillian-junit-container.version>1.1.12.Final</arquillian-junit-container.version>
-    <thymeleaf.version>3.0.7.RELEASE</thymeleaf.version>
     <jquery.version>3.2.1</jquery.version>
     <bootstrap.version>3.3.7-1</bootstrap.version>
     <org.eclipse.jgit.version>4.8.0.201706111038-r</org.eclipse.jgit.version>
     <initializr-generator.version>0.5.0.BUILD-SNAPSHOT</initializr-generator.version>
-    <booster-catalog-service.version>12</booster-catalog-service.version>
+    <booster-catalog-service.version>13-SNAPSHOT</booster-catalog-service.version>
     <catalog.repository>https://github.com/openshiftio/booster-catalog</catalog.repository>
     <catalog.repository.ref>next</catalog.repository.ref>
+    <asciidoctorj.version>1.5.4</asciidoctorj.version>
+    <maven-model.version>3.3.9</maven-model.version>
+    <ant.version>1.9.4</ant.version>
+    <typeaheadjs.version>0.11.1</typeaheadjs.version>
+    <mustache.version>2.3.0</mustache.version>
   </properties>
 
   <dependencyManagement>
@@ -120,19 +124,19 @@
     <dependency>
       <groupId>org.asciidoctor</groupId>
       <artifactId>asciidoctorj</artifactId>
-      <version>1.5.4</version>
+      <version>${asciidoctorj.version}</version>
     </dependency>
 
     <dependency>
       <groupId>org.apache.ant</groupId>
       <artifactId>ant</artifactId>
-      <version>1.9.4</version>
+      <version>${ant.version}</version>
     </dependency>
 
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-model</artifactId>
-      <version>3.3.9</version>
+      <version>${maven-model.version}</version>
     </dependency>
 
     <!-- Spring Cloud -->
@@ -143,6 +147,16 @@
     </dependency>
 
     <!-- Web -->
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-mustache</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-websocket</artifactId>
+    </dependency>
 
     <dependency>
       <groupId>org.webjars</groupId>
@@ -164,13 +178,15 @@
     <dependency>
       <groupId>org.webjars</groupId>
       <artifactId>typeaheadjs</artifactId>
-      <version>0.11.1</version>
+      <version>${typeaheadjs.version}</version>
     </dependency>
 
     <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-mustache</artifactId>
+      <groupId>org.webjars.bower</groupId>
+      <artifactId>mustache</artifactId>
+      <version>${mustache.version}</version>
     </dependency>
+
 
     <dependency>
       <groupId>org.json</groupId>
