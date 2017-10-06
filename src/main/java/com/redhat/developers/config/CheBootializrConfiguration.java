@@ -17,9 +17,9 @@ package com.redhat.developers.config;
 
 import com.redhat.developers.metadata.StaticInitializrMetadataProvider;
 import com.redhat.developers.metadata.VersionedDependencyMetadataProvider;
-import com.redhat.developers.project.CheProjectController;
 import com.redhat.developers.service.GitHubRepoService;
-import com.redhat.developers.service.TemplateService;
+import com.redhat.developers.utils.GeneralUtil;
+import io.openshift.booster.catalog.Booster;
 import io.openshift.booster.catalog.BoosterCatalogService;
 import io.spring.initializr.generator.ProjectGenerator;
 import io.spring.initializr.generator.ProjectRequestPostProcessor;
@@ -28,22 +28,17 @@ import io.spring.initializr.generator.ProjectResourceLocator;
 import io.spring.initializr.metadata.*;
 import io.spring.initializr.util.TemplateRenderer;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.text.StrSubstitutor;
 import org.asciidoctor.Asciidoctor;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.bind.RelaxedPropertyResolver;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 @Configuration
 @EnableConfigurationProperties(value = {InitializrProperties.class, CheBootalizrProperties.class})
@@ -103,12 +98,22 @@ public class CheBootializrConfiguration {
     }
 
     @Bean
-    public BoosterCatalogService boosterCatalogService(CheBootalizrProperties cheBootalizrProperties) {
+    public SpringBootBoosterListener springBootBoosterListener() {
+        return new SpringBootBoosterListener();
+    }
 
-        BoosterCatalogService boosterCatalogService = new BoosterCatalogService.Builder()
+    @Bean
+    public BoosterCatalogService boosterCatalogService(CheBootalizrProperties cheBootalizrProperties,
+                                                       SpringBootBoosterListener springBootBoosterListener) {
+
+        final BoosterCatalogService boosterCatalogService = new BoosterCatalogService.Builder()
             .catalogRef(cheBootalizrProperties.getBoosterCatalog().getCatalogRef())
             .catalogRepository(cheBootalizrProperties.getBoosterCatalog().getCatalogRepository())
+            .listener(springBootBoosterListener)
+            .filter(GeneralUtil::onlySpringBootCommunity)
             .build();
+
+        boosterCatalogService.index();
 
         return boosterCatalogService;
     }
@@ -117,4 +122,5 @@ public class CheBootializrConfiguration {
     public Asciidoctor asciidoctor() {
         return Asciidoctor.Factory.create();
     }
+
 }

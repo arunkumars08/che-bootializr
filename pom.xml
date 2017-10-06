@@ -35,7 +35,7 @@
     <bootstrap.version>3.3.7-1</bootstrap.version>
     <org.eclipse.jgit.version>4.8.0.201706111038-r</org.eclipse.jgit.version>
     <initializr-generator.version>0.5.0.BUILD-SNAPSHOT</initializr-generator.version>
-    <booster-catalog-service.version>13-SNAPSHOT</booster-catalog-service.version>
+    <booster-catalog-service.version>13</booster-catalog-service.version>
     <catalog.repository>https://github.com/openshiftio/booster-catalog</catalog.repository>
     <catalog.repository.ref>next</catalog.repository.ref>
     <asciidoctorj.version>1.5.4</asciidoctorj.version>
@@ -43,10 +43,18 @@
     <ant.version>1.9.4</ant.version>
     <typeaheadjs.version>0.11.1</typeaheadjs.version>
     <mustache.version>2.3.0</mustache.version>
+    <spring-cloud-kubernetes.version>0.2.0.RELEASE</spring-cloud-kubernetes.version>
   </properties>
 
   <dependencyManagement>
     <dependencies>
+      <dependency>
+        <groupId>io.projectreactor</groupId>
+        <artifactId>reactor-bom</artifactId>
+        <version>Bismuth-RELEASE</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
       <dependency>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-dependencies</artifactId>
@@ -57,7 +65,7 @@
       <dependency>
         <groupId>org.springframework.cloud</groupId>
         <artifactId>spring-cloud-starter-kubernetes-all</artifactId>
-        <version>0.2.0.RELEASE</version>
+        <version>${spring-cloud-kubernetes.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -144,6 +152,13 @@
     <dependency>
       <groupId>org.springframework.cloud</groupId>
       <artifactId>spring-cloud-kubernetes-config</artifactId>
+    </dependency>
+
+    <!-- Reactive -->
+
+    <dependency>
+      <groupId>io.projectreactor</groupId>
+      <artifactId>reactor-core</artifactId>
     </dependency>
 
     <!-- Web -->
@@ -244,6 +259,12 @@
       <groupId>io.fabric8</groupId>
       <artifactId>kubernetes-api</artifactId>
       <version>${kubernetes-api.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>io.projectreactor</groupId>
+      <artifactId>reactor-test</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>

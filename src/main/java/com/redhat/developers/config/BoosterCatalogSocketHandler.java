@@ -2,7 +2,6 @@ package com.redhat.developers.config;
 
 import io.openshift.booster.catalog.Booster;
 import io.openshift.booster.catalog.BoosterCatalogService;
-import io.reactivex.Flowable;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
 import org.springframework.stereotype.Component;
@@ -10,6 +9,7 @@ import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
+import reactor.core.publisher.Flux;
 
 import java.io.IOException;
 
@@ -17,18 +17,22 @@ import java.io.IOException;
 @Slf4j
 public class BoosterCatalogSocketHandler extends TextWebSocketHandler {
 
+    private final SpringBootBoosterListener springBootBoosterListener;
     private final BoosterCatalogService boosterCatalogService;
-    private Flowable<Booster> boosters;
 
-    public BoosterCatalogSocketHandler(BoosterCatalogService boosterCatalogService) {
+    private Flux<Booster> boosters;
+
+    public BoosterCatalogSocketHandler(BoosterCatalogService boosterCatalogService,
+                                       SpringBootBoosterListener springBootBoosterListener) {
         this.boosterCatalogService = boosterCatalogService;
+        this.springBootBoosterListener = springBootBoosterListener;
     }
 
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
         log.info("Connection Established ... triggering index");
-        boosters = boosterCatalogService.rxIndex();
+        boosters = Flux.from(springBootBoosterListener);
     }
 
     @Override
@@ -36,8 +40,11 @@ public class BoosterCatalogSocketHandler extends TextWebSocketHandler {
 
         log.info("Handling message ...");
 
+        if (boosterCatalogService.index().isDone()) {
+            boosters = Flux.fromIterable(boosterCatalogService.getBoosters());
+        }
+
         boosters
-            .filter(booster -> isSpringBoot(booster))
             .subscribe(booster -> {
                 JSONObject projectBoosterJson = new JSONObject()
                     .put("id", booster.getId())
@@ -51,19 +58,5 @@ public class BoosterCatalogSocketHandler extends TextWebSocketHandler {
                     log.error("Error sending messgae", e);
                 }
             }, throwable -> log.warn(throwable.getMessage()));
-    }
-
-    /**
-     * @param booster
-     * @return
-     */
-    private boolean isSpringBoot(Booster booster) {
-
-        return (booster.getRuntime().getId().equals("spring-boot"))
-            && (booster.getVersion().getId().equals("community"))
-            && (booster.getId().contains("spring")
-            || booster.getLabels().contains("spring")
-            || booster.getDescription().contains("spring")
-            || booster.getName().contains("spring"));
     }
 }

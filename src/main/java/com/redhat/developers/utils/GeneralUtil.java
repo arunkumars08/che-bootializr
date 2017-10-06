@@ -15,6 +15,7 @@
  */
 package com.redhat.developers.utils;
 
+import io.openshift.booster.catalog.Booster;
 import io.spring.initializr.generator.ProjectRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.asciidoctor.Asciidoctor;
@@ -63,5 +64,15 @@ public class GeneralUtil {
         } catch (UnsupportedEncodingException e) {
             throw new IllegalStateException(e);
         }
+    }
+
+    /**
+     * @param booster
+     * @return
+     */
+    public static boolean onlySpringBootCommunity(Booster booster) {
+
+        return (booster.getRuntime().getId().equals("spring-boot"))
+            && (booster.getVersion().getId().equals("community"));
     }
 }

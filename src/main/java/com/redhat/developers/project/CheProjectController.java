@@ -55,6 +55,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author kameshsampath
@@ -99,28 +102,6 @@ public class CheProjectController {
         projectRequest.initialize(metadataProvider.get());
         return projectRequest;
     }
-
-    // TODO - remove it
-//    @ModelAttribute("projectMissions")
-//    public List<ProjectMissionVO> projectMissions() {
-//        List<ProjectMissionVO> projectMissions = new LinkedList<>();
-//        Set<Mission> missions = boosterCatalogService.getMissions();
-//        log.info("Total Missions:{}", missions.size());
-//        missions.forEach(mission -> {
-//            ProjectMissionVO missionVO = new ProjectMissionVO();
-//            missionVO.setMission(mission);
-//            Optional<Booster> optBooster = boosterCatalogService.getBooster(mission, new Runtime("spring-boot"));
-//            if (optBooster.isPresent()) {
-//                Booster booster = optBooster.get();
-//                log.trace("Adding Booster :" + booster.getName());
-//                missionVO.setBooster(optBooster.get());
-//                missionVO.setBoosterDescription(
-//                    GeneralUtil.descriptionToString(asciidoctor, booster.getDescription()));
-//            }
-//            projectMissions.add(missionVO);
-//        });
-//        return projectMissions;
-//    }
 
     @GetMapping("/")
     public String home(Map<String, Object> model) {
@@ -245,73 +226,93 @@ public class CheProjectController {
     protected Path makeProject(BasicProjectRequest request, String boosterId)
         throws IOException, XmlPullParserException {
 
-        Optional<Booster> optional = boosterCatalogService.getBoosters().stream()
-            .filter(b -> b.getId().equals(boosterId))
-            .findFirst();
+        if (boosterId != null) {
 
-        if (optional.isPresent()) {
+            Optional<Booster> optional = boosterCatalogService.getBoosters().stream()
+                .filter(b -> b.getId().equals(boosterId))
+                .findFirst();
 
-            Booster booster = optional.get();
-            ProjectRequest projectRequest = (ProjectRequest) request;
-            byte[] springPomBytes = projectGenerator.generateMavenPom(projectRequest);
-            String springPom = new String(springPomBytes);
+            if (optional.isPresent()) {
 
-            Path projectDir;
+                Booster booster = optional.get();
+                ProjectRequest projectRequest = (ProjectRequest) request;
+                byte[] springPomBytes = projectGenerator.generateMavenPom(projectRequest);
+                String springPom = new String(springPomBytes);
 
-            try {
+                Path projectDir;
 
-                projectDir = Files.createTempDirectory("tmpchebootializr");
-                log.info("Project temp directory :{}", projectDir.toFile().getAbsolutePath());
-                Files.deleteIfExists(projectDir);
-                projectDir.toFile().mkdirs();
-                Path projectRootDir;
-                if (request.getBaseDir() != null) {
-                    projectRootDir = Files.createDirectories(Paths.get(projectDir.toFile().getAbsolutePath(), request.getBaseDir()));
-                } else {
-                    projectRootDir = projectDir;
+                try {
+
+                    projectDir = Files.createTempDirectory("tmpchebootializr");
+                    log.info("Project temp directory :{}", projectDir.toFile().getAbsolutePath());
+                    Files.deleteIfExists(projectDir);
+                    projectDir.toFile().mkdirs();
+                    Path projectRootDir;
+                    if (request.getBaseDir() != null) {
+                        projectRootDir = Files.createDirectories(Paths.get(projectDir.toFile().getAbsolutePath(), request.getBaseDir()));
+                    } else {
+                        projectRootDir = projectDir;
+                    }
+                    boosterCatalogService.copy(booster, projectRootDir);
+
+                    log.info("Booster copied to  Dir: {}", projectRootDir);
+
+                    MavenXpp3Reader mavenXpp3Reader = new MavenXpp3Reader();
+
+                    Model springInitalizrPomModel;
+
+                    try (StringReader stringPomReader = new StringReader(springPom)) {
+                        springInitalizrPomModel = mavenXpp3Reader.read(stringPomReader);
+                    }
+
+                    File boosterPomFile = Paths.get(projectRootDir.toFile().getAbsolutePath(),
+                        "pom.xml").toFile();
+
+                    Model boosterPomModel;
+                    try (FileReader pomReader = new FileReader(boosterPomFile)) {
+                        boosterPomModel = mavenXpp3Reader.read(pomReader);
+                    }
+
+                    mergeModel(springInitalizrPomModel, boosterPomModel);
+
+                    //Write back the pom
+                    MavenXpp3Writer mavenXpp3Writer = new MavenXpp3Writer();
+                    Files.delete(Paths.get(boosterPomFile.getAbsolutePath()));
+                    try (FileWriter pomWriter = new FileWriter(boosterPomFile)) {
+                        mavenXpp3Writer.write(pomWriter, boosterPomModel);
+                    }
+
+                    return projectRootDir;
+
+                } catch (IOException e) {
+                    log.error("Error creating project ", e);
+                    throw e;
+                } catch (XmlPullParserException e) {
+                    log.error("Error creating project ", e);
+                    throw e;
                 }
-                boosterCatalogService.copy(booster, projectRootDir);
-
-                log.info("Booster copied to  Dir: {}", projectRootDir);
-
-                MavenXpp3Reader mavenXpp3Reader = new MavenXpp3Reader();
-
-                Model springInitalizrPomModel;
-
-                try (StringReader stringPomReader = new StringReader(springPom)) {
-                    springInitalizrPomModel = mavenXpp3Reader.read(stringPomReader);
-                }
-
-                File boosterPomFile = Paths.get(projectRootDir.toFile().getAbsolutePath(),
-                    "pom.xml").toFile();
-
-                Model boosterPomModel;
-                try (FileReader pomReader = new FileReader(boosterPomFile)) {
-                    boosterPomModel = mavenXpp3Reader.read(pomReader);
-                }
-
-                mergeModel(springInitalizrPomModel, boosterPomModel);
-
-                //Write back the pom
-                MavenXpp3Writer mavenXpp3Writer = new MavenXpp3Writer();
-                Files.delete(Paths.get(boosterPomFile.getAbsolutePath()));
-                try (FileWriter pomWriter = new FileWriter(boosterPomFile)) {
-                    mavenXpp3Writer.write(pomWriter, boosterPomModel);
-                }
-
-
-                return projectRootDir;
-
-            } catch (IOException e) {
-                log.error("Error creating project ", e);
-                throw e;
-            } catch (XmlPullParserException e) {
-                log.error("Error creating project ", e);
-                throw e;
+            } else {
+                throw new IllegalStateException("Unable to build project");
             }
         } else {
-            throw new IllegalStateException("Unable to build project");
+            return makeProject(request);
         }
+
+    }
+
+    /**
+     * @param request
+     * @return
+     * @throws Exception
+     */
+    private Path makeProject(BasicProjectRequest request) {
+        ProjectRequest projectRequest = (ProjectRequest) request;
+
+        File projectDir = projectGenerator.generateProjectStructure(projectRequest);
+
+        log.trace("Project created at : {}", projectDir);
+
+        return Paths.get(projectDir.toURI());
     }
 
     /**
@@ -322,6 +323,7 @@ public class CheProjectController {
      * @param packaging
      * @return
      */
+
     private CheSpringBootProjectVO buildResponse(RepoVO repoVO, String artifactId, String groupId, String name, String packaging) {
         String workspaceUrl = String.format("%s/f?url=%s", cheBootalizrProperties.getChe().getServiceUrl()
             , GeneralUtil.sanitizeGitUrl(repoVO.getHttpUrl()));
@@ -397,9 +399,8 @@ public class CheProjectController {
 
         //Dependency Management
         DependencyManagement dependencyManagement = springInitalizrPomModel.getDependencyManagement();
-
-        if (dependencyManagement != null) {
-            DependencyManagement boosterDepMgmt = boosterPomModel.getDependencyManagement();
+        DependencyManagement boosterDepMgmt = boosterPomModel.getDependencyManagement();
+        if (dependencyManagement != null && boosterDepMgmt != null) {
             if (dependencyManagement.getDependencies() != null) {
                 dependencyManagement.getDependencies().forEach(dependency ->
                     boosterDepMgmt.getDependencies().add(dependency));
@@ -410,14 +411,36 @@ public class CheProjectController {
         List<Dependency> springDeps = springInitalizrPomModel.getDependencies();
         List<Dependency> boosterDeps = boosterPomModel.getDependencies();
 
-        if ((boosterDeps != null && !!boosterDeps.isEmpty()) &&
-            (springDeps != null && !!springDeps.isEmpty())) {
-            boosterDeps.addAll(boosterDeps);
+        if ((boosterDeps != null && !boosterDeps.isEmpty()) &&
+            (springDeps != null && !springDeps.isEmpty())) {
+            if ("pom".equals(boosterPomModel.getPackaging())) {
+                if (boosterDepMgmt != null) {
+                    Collection<Dependency> merged = distinctDependencies(boosterDepMgmt.getDependencies(), springDeps);
+                    boosterDepMgmt.getDependencies().clear();
+                    boosterDepMgmt.getDependencies().addAll(merged);
+                }
+            } else {
+                Collection<Dependency> merged = distinctDependencies(boosterDeps, springDeps);
+                boosterDeps.clear();
+                boosterDeps.addAll(merged);
+            }
         }
 
         log.info("Successfully merged Booster POM with Spring Intializr Pom");
-
     }
 
+    private Collection<Dependency> distinctDependencies(List<Dependency> boosterDeps, List<Dependency> springDeps) {
+
+        Comparator<Dependency> scopeComparator = Comparator.comparing(Dependency::getScope,
+            Comparator.nullsLast(Comparator.naturalOrder()));
+
+        Set<Dependency> uniqueDeps = new TreeSet<>(Comparator.comparing(Dependency::getGroupId)
+            .thenComparing(Dependency::getArtifactId).thenComparing(scopeComparator));
+
+        uniqueDeps.addAll(boosterDeps);
+        uniqueDeps.addAll(springDeps);
+
+        return uniqueDeps;
+    }
 
 }
