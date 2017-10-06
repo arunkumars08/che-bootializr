@@ -19,7 +19,6 @@ import com.redhat.developers.metadata.StaticInitializrMetadataProvider;
 import com.redhat.developers.metadata.VersionedDependencyMetadataProvider;
 import com.redhat.developers.service.GitHubRepoService;
 import com.redhat.developers.utils.GeneralUtil;
-import io.openshift.booster.catalog.Booster;
 import io.openshift.booster.catalog.BoosterCatalogService;
 import io.spring.initializr.generator.ProjectGenerator;
 import io.spring.initializr.generator.ProjectRequestPostProcessor;
@@ -28,7 +27,6 @@ import io.spring.initializr.generator.ProjectResourceLocator;
 import io.spring.initializr.metadata.*;
 import io.spring.initializr.util.TemplateRenderer;
 import lombok.extern.slf4j.Slf4j;
-import org.asciidoctor.Asciidoctor;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.bind.RelaxedPropertyResolver;
@@ -117,10 +115,4 @@ public class CheBootializrConfiguration {
 
         return boosterCatalogService;
     }
-
-    @Bean
-    public Asciidoctor asciidoctor() {
-        return Asciidoctor.Factory.create();
-    }
-
 }

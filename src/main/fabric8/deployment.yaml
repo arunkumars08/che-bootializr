@@ -5,6 +5,9 @@ spec:
         - volumeMounts:
           - name: github-config
             mountPath: "/home/jboss"
+          - name: app-config
+            mountPath: "/deployments/config"
+            readOnly: true
       volumes:
       - name: github-config
         secret:
@@ -12,5 +15,11 @@ spec:
           items:
           - key: github.user 
             path: user 
-          - key: github.oauth
-            path: token 
+          - key: github.token
+            path: token
+      - name: app-config
+        configMap:
+          name: che-bootializr
+          items:
+          - key: application.yaml
+            path: application.yaml

@@ -1,12 +1,12 @@
 /**
  * Copyright (c) 2017 Red Hat, Inc.
- * <p>
+ *
  * Red Hat licenses this file to you under the Apache License, version
  * 2.0 (the "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * <p>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
@@ -39,7 +39,6 @@ import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.taskdefs.Zip;
 import org.apache.tools.ant.types.ZipFileSet;
-import org.asciidoctor.Asciidoctor;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.http.HttpStatus;
@@ -55,9 +54,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * @author kameshsampath
@@ -77,14 +73,13 @@ public class CheProjectController {
     private final DependencyMetadataProvider dependencyMetadataProvider;
     private final BoosterCatalogService boosterCatalogService;
     private final CheBootalizrProperties cheBootalizrProperties;
-    private final Asciidoctor asciidoctor;
 
     public CheProjectController(InitializrMetadataProvider metadataProvider,
                                 DependencyMetadataProvider dependencyMetadataProvider,
                                 ProjectGenerator projectGenerator, TemplateService templateService,
                                 GitHubRepoService gitHubRepoService,
                                 CheBootalizrProperties cheBootalizrProperties,
-                                BoosterCatalogService boosterCatalogService, Asciidoctor asciidoctor) {
+                                BoosterCatalogService boosterCatalogService) {
         this.projectGenerator = projectGenerator;
         this.templateService = templateService;
         this.gitHubRepoService = gitHubRepoService;
@@ -92,7 +87,6 @@ public class CheProjectController {
         this.dependencyMetadataProvider = dependencyMetadataProvider;
         this.cheBootalizrProperties = cheBootalizrProperties;
         this.boosterCatalogService = boosterCatalogService;
-        this.asciidoctor = asciidoctor;
     }
 
     @ModelAttribute

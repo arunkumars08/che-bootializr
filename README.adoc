@@ -15,6 +15,16 @@ local Openshift cluster.
 Please follow the instructions at https://www.eclipse.org/che/docs/setup/openshift/index.html, to have
 the Eclipse Che installed on your OpenShift Cluster.
 
+=== OpenShift Service Account Permissions
+
+The spring-cloud-kubernetes library used in the project requires the default service account to have view permissions, to enable that we execute the following command,
+
+[source,sh]
+----
+oc policy add-role-to-user view -z default -n $(oc project -q)
+----
+
+
 [[build]]
 === Build and Install Spring Initializr
 
