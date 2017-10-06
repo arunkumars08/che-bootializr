@@ -1,8 +1,15 @@
 var projectBoosterTpl = "<div id=\"projectBooster\" class=\"form-group col-sm-6\"><div class=\"checkbox\"><label> " +
     "<input type=\"checkbox\" id=\"{{id}}\" name=\"projectBooster\" value=\"{{id}}\">" +
     "&nbsp;&nbsp;<strong>{{name}}</strong>" +
-    "<p class=\"help-block\">{{#description}}{{& .}}{{/description}}</p></label></div></div>";
+    "<p class=\"help-block\">{{#adoc}} {{description}} {{/adoc}}</p></label></div></div>";
 
+var asciiDoctor = Asciidoctor();
+
+function docToHTML(txtAdoc) {
+    var html = asciiDoctor.converter(txtAdoc);
+    console.log(html);
+    return html;
+}
 
 $(function () {
 
@@ -11,8 +18,8 @@ $(function () {
     var wsConnect = function () {
         ws = new WebSocket('ws://localhost:8080/boosters');
         ws.onmessage = function (event) {
-            console.log("Data"+event)
-            console.log("Data Body"+event.data)
+            //console.log("Data"+event)
+            //console.log("Data Body"+event.data)
             var boosterJson = JSON.parse(event.data);
             displayBooster(boosterJson);
         };
@@ -34,6 +41,7 @@ $(function () {
         if (boosterJson) {
             $('#noCatalog').hide();
             var html = Mustache.to_html(projectBoosterTpl, boosterJson);
+            //console.log(html);
             $('#catalogs').append(html);
         }
     };

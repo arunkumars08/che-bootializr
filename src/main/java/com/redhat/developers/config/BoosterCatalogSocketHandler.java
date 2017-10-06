@@ -49,7 +49,8 @@ public class BoosterCatalogSocketHandler extends TextWebSocketHandler {
                 JSONObject projectBoosterJson = new JSONObject()
                     .put("id", booster.getId())
                     .put("name", booster.getName())
-                    .put("description", booster.getDescription());
+                    .put("description", booster.getDescription())
+                    .put("adoc", "function(){ return function(text, render) { return docToHTML(render(text));}}");
                 try {
                     String payload = projectBoosterJson.toString();
                     log.debug("PAYLOAD:{}", payload);
