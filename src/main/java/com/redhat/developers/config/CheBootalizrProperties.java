@@ -30,6 +30,9 @@ public class CheBootalizrProperties {
     @NoArgsConstructor(force = true)
     public static class Che {
         String serviceUrl;
+        String githubUserFile;
+        String githubUserTokenFile;
+        String factoryPath;
     }
 
     @Data

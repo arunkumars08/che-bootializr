@@ -64,8 +64,8 @@ public class GitHubRepoService {
     @PostConstruct
     public void init() throws IOException, URISyntaxException {
 
-        String githubUserNameFilePath = StrSubstitutor.replaceSystemProperties("${user.home}/github/user");
-        String githubUserTokenFilePath = StrSubstitutor.replaceSystemProperties("${user.home}/github/token");
+        String githubUserNameFilePath = cheBootalizrProperties.getChe().getGithubUserFile();
+        String githubUserTokenFilePath = cheBootalizrProperties.getChe().getGithubUserTokenFile();
 
         try {
             URL githubUserSecretsURL = ResourceUtils.getURL(githubUserNameFilePath);
@@ -82,6 +82,8 @@ public class GitHubRepoService {
                 this.githubUserId = sanitize(encodedGithubUser);
 
                 this.githubUserToken = sanitize(encodedGithubToken);
+
+                log.info("Git User and Password set from user and token file");
             }
         } catch (NoSuchFileException e) {
             log.warn(e.getMessage());

@@ -4,7 +4,9 @@ spec:
       containers:
         - volumeMounts:
           - name: github-config
-            mountPath: "/home/jboss"
+            mountPath: "/deployments/data/github"
+          - name: che-factory-config
+            mountPath: "/deployments/data/che/factories"
           - name: app-config
             mountPath: "/deployments/config"
             readOnly: true
@@ -23,3 +25,9 @@ spec:
           items:
           - key: application.yaml
             path: application.yaml
+      - name: che-factory-config
+        configMap:
+          name: che-factory-config
+          items:
+          - key: .factory.json.tpl
+            path: .factory.json.tpl

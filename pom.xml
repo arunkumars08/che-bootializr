@@ -43,6 +43,8 @@
     <typeaheadjs.version>0.11.1</typeaheadjs.version>
     <mustache.version>2.3.0</mustache.version>
     <spring-cloud-kubernetes.version>0.2.0.RELEASE</spring-cloud-kubernetes.version>
+
+    <fabric8.generator.from>kameshsampath/fabric8-s2i-java</fabric8.generator.from>
   </properties>
 
   <dependencyManagement>
@@ -349,6 +351,7 @@
           <excludes>
             <exclude>**/README.*</exclude>
             <exclude>**/LICENSE</exclude>
+            <exclude>docker/**</exclude>
             <exclude>.mvn/**</exclude>
             <exclude>.editorconfig</exclude>
             <exclude>mvnw.cmd</exclude>

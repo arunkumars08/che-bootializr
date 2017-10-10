@@ -861,9 +861,11 @@ data:
               versionRange: "[1.0.0.RELEASE,1.5.0.RC1)"
     chebootializr:
       git:
-        fileName: ~/.github
+        fileName: /deployments/data/.github
       che:
         service-url: http://che-eclipse-che.192.168.64.8.nip.io
+        githubUserFile: /deployments//data/github/user
+        githubUserTokenFile: /deployments//data/github/token
       booster-catalog:
         catalogRef: next
         catalogRepository: https://github.com/openshiftio/booster-catalog.git

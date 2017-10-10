@@ -16,7 +16,10 @@ $(function () {
     var ws = null;
 
     var wsConnect = function () {
-        ws = new WebSocket('ws://localhost:8080/boosters');
+        var urlHost = $(location).attr('host');
+        var wsURL = 'ws://'+urlHost+'/boosters';
+        console.log('Web Socket url:'+wsURL);
+        ws = new WebSocket(wsURL);
         ws.onmessage = function (event) {
             //console.log("Data"+event)
             //console.log("Data Body"+event.data)

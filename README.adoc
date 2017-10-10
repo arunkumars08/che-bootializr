@@ -12,8 +12,21 @@ local Openshift cluster.
 [[pre-req]]
 == Pre-requisites
 
+== Eclipse Che on OpenShift
 Please follow the instructions at https://www.eclipse.org/che/docs/setup/openshift/index.html, to have
 the Eclipse Che installed on your OpenShift Cluster.
+
+=== Docker Image
+
+Since the application requires git executable, use the Dockerfile to build the required OpenShift s2i-java
+
+[source,sh]
+----
+docker build --rm -t kameshsampath/fabric8-s2i-java <1>
+----
+
+<1> if you tend to change the tag `kameshsampath/fabric8-s2i-java` then also update the property
+    `<fabric8.generator.from>kameshsampath/fabric8-s2i-java</fabric8.generator.from>` in pom.xml
 
 === OpenShift Service Account Permissions
 
@@ -23,7 +36,6 @@ The spring-cloud-kubernetes library used in the project requires the default ser
 ----
 oc policy add-role-to-user view -z default -n $(oc project -q)
 ----
-
 
 [[build]]
 === Build and Install Spring Initializr
@@ -95,6 +107,39 @@ NOTE: The applications will use oAuth and personal access token over ssh/passwor
 
 
 ==== Build and Deploy application
+
+===== Local
+
+====== Personal Access Token
+
+To run the application locally, you need to create https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/[Github Personal Access token].
+Once you have created the GitHub personal access token, create a file called **~/.github** with the content like the following,
+
+[source,sh]
+----
+login=<your github login>
+oauth=<personal access token created earlier>
+----
+
+[IMPORTANT]
+===
+When creating https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/[Github Personal Access token],
+please remember to add the parent scopes and all their children for the following:
+* repo
+* admin:repo_hook
+===
+
+====== Update application-dev.yaml
+
+Edit the application-dev.yaml to update the che `service-url` to path matching your local che url
+
+====== Running the Application 
+[source,sh]
+----
+./mvnw clean spring-boot:run -Drun.profiles=dev
+----
+
+===== Openshift
 
 Once you have all the above steps done, you just need to execute the following command to have the application deployed
 on to the OpenShift cluster.
