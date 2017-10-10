@@ -1,0 +1,109 @@
+{
+  "v": "4.0",
+  "workspace": {
+    "environments": {
+      "default": {
+        "recipe": {
+          "location": "rhche/spring-boot",
+          "type": "dockerimage"
+        },
+        "machines": {
+          "dev-machine": {
+            "servers": {},
+            "agents": [
+              "org.eclipse.che.terminal",
+              "org.eclipse.che.ws-agent",
+              "org.eclipse.che.exec"
+            ],
+            "attributes": {
+              "memoryLimitBytes": "2147483648"
+            }
+          }
+        }
+      }
+    },
+    "defaultEnv": "default",
+    "projects": [
+      {
+        "links": [],
+        "description": "Che with Spring Boot Initializr",
+        "source": {
+          "location": "https://github.com/kameshsampath/che-bootializr.git",
+          "type": "git",
+          "parameters": {}
+        },
+        "mixins": [
+          "git",
+          "pullrequest"
+        ],
+        "problems": [],
+        "name": "che-bootializr",
+        "type": "maven",
+        "path": "/che-bootializr",
+        "attributes": {
+          "language": [
+            "java"
+          ]
+        }
+      }
+    ],
+    "name": "che-bootializr",
+    "commands": [
+      {
+        "commandLine": "scl enable rh-maven33 'mvn install -f ${current.project.path}'",
+        "name": "build",
+        "type": "mvn",
+        "attributes": {
+          "goal": "Build",
+          "previewUrl": ""
+        }
+      },
+      {
+        "commandLine": "scl enable rh-maven33 'mvn clean install -f ${current.project.path}'",
+        "name": "clean build",
+        "type": "mvn",
+        "attributes": {
+          "goal": "Build",
+          "previewUrl": ""
+        }
+      },
+      {
+        "commandLine": "scl enable rh-maven33 'mvn compile spring-boot:run -f ${current.project.path}'",
+        "name": "run",
+        "type": "custom",
+        "attributes": {
+          "goal": "Run",
+          "previewUrl": "http://${server.port.8080}"
+        }
+      },
+      {
+        "commandLine": "scl enable rh-maven33 'mvn spring-boot:run -Drun.jvmArguments=\"-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=5005\" -f ${current.project.path}'",
+        "name": "debug",
+        "type": "custom",
+        "attributes": {
+          "goal": "Debug",
+          "previewUrl": "http://${server.port.8080}"
+        }
+      }
+    ]
+  },
+  "policies": {
+    "create": "perClick"
+  },
+  "ide": {
+    "onProjectsLoaded": {
+      "actions": [
+        {
+          "id": "openFile",
+          "properties": {
+            "file": "/che-bootializr/pom.xml"
+          }
+        }
+      ]
+    }
+  },
+  "creator": {
+    "name": "Kamesh Sampath",
+    "email": "kamesh.sampath@hotmail.com"
+  }
+}

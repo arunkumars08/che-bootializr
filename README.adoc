@@ -122,12 +122,12 @@ oauth=<personal access token created earlier>
 ----
 
 [IMPORTANT]
-===
+====
 When creating https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/[Github Personal Access token],
 please remember to add the parent scopes and all their children for the following:
 * repo
 * admin:repo_hook
-===
+====
 
 ====== Update application-dev.yaml
 
